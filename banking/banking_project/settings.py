@@ -56,13 +56,28 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.replit.app",
 ] + _extra_origins
 
-# Allow cookies to be set inside cross-origin iframes (the Replit preview pane
-# is a cross-origin iframe). Without SameSite=None the browser silently drops
-# the CSRF cookie, causing every form POST to 403.
-CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = True
+# ── Cookie / CSRF policy for cross-origin iframe (Replit preview pane) ───────
+#
+# Chrome 2024+ blocks ALL third-party cookies in cross-origin iframes —
+# including SameSite=None; Secure. Two fixes applied together:
+#
+#  1. CSRF_USE_SESSIONS — stores the CSRF token inside the server-side
+#     session instead of a dedicated csrftoken cookie. Eliminates the CSRF
+#     cookie entirely; only the session cookie needs to survive.
+#
+#  2. Session cookie with Partitioned (CHIPS) — the session cookie is stamped
+#     with SameSite=None; Secure; Partitioned by PartitionedCookiesMiddleware
+#     in banking_project/middleware.py. Partitioned cookies are stored per
+#     top-level site, which exempts them from third-party cookie blocking.
+#
+# Django 5.2's CSRF middleware source does NOT contain native Partitioned
+# support for the CSRF cookie; CSRF_USE_SESSIONS sidesteps that entirely.
+
+CSRF_USE_SESSIONS = True          # CSRF token lives in the session, not a cookie
+
+SESSION_COOKIE_SAMESITE = "None"  # Required for cross-origin iframe access
+SESSION_COOKIE_SECURE = True      # Required when SameSite=None
+SESSION_COOKIE_PARTITIONED = True # Django 5.1+ — CHIPS; middleware also enforces
 
 # ---------------------------------------------------------------------------
 # Application definition
@@ -81,6 +96,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # PartitionedCookiesMiddleware MUST come before SessionMiddleware.
+    # Django processes responses in reverse-list order, so listing it first
+    # ensures it runs last on responses — after Session has set its cookie.
+    "banking_project.middleware.PartitionedCookiesMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
