@@ -1,21 +1,19 @@
 {% extends "base.html" %}
-{% comment %}
-  register.html — User registration page.
-  Extends base.html. Renders RegistrationForm.
-  On POST success, RegisterView logs the user in and redirects to /dashboard/.
-{% endcomment %}
+{% comment %}register.html — Apex account creation page{% endcomment %}
 
-{% block title %}Create Account — BankSim{% endblock %}
+{% block title %}Open an Account — Apex{% endblock %}
 
 {% block content %}
 <div class="container">
-  <div class="card auth-card">
+  <div class="card auth-card" style="max-width:500px;">
     <div class="card-body p-4 p-md-5">
 
       <div class="text-center mb-4">
-        <i class="bi bi-person-plus-fill fs-1 text-primary"></i>
-        <h2 class="fw-bold mt-2">Create your account</h2>
-        <p class="text-muted">Start your banking journey</p>
+        <div class="mx-auto mb-3" style="width:52px;height:52px;background:linear-gradient(135deg,#4F46E5 0%,#818CF8 100%);border-radius:14px;display:flex;align-items:center;justify-content:center;">
+          <span style="color:#fff;font-size:1.4rem;font-weight:800;letter-spacing:-1px;">A</span>
+        </div>
+        <h2 class="fw-bold mb-1" style="font-size:1.5rem;">Open your Apex account</h2>
+        <p class="text-muted" style="font-size:0.9rem;">Join millions banking smarter, simpler, faster</p>
       </div>
 
       <form method="post" novalidate>
@@ -23,14 +21,14 @@
 
         <div class="row g-3 mb-3">
           <div class="col-sm-6">
-            <label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold">First name</label>
+            <label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold" style="font-size:0.875rem;">First name</label>
             {{ form.first_name }}
             {% if form.first_name.errors %}
               <div class="text-danger small mt-1">{% for e in form.first_name.errors %}{{ e }}{% endfor %}</div>
             {% endif %}
           </div>
           <div class="col-sm-6">
-            <label for="{{ form.last_name.id_for_label }}" class="form-label fw-semibold">Last name</label>
+            <label for="{{ form.last_name.id_for_label }}" class="form-label fw-semibold" style="font-size:0.875rem;">Last name</label>
             {{ form.last_name }}
             {% if form.last_name.errors %}
               <div class="text-danger small mt-1">{% for e in form.last_name.errors %}{{ e }}{% endfor %}</div>
@@ -39,7 +37,7 @@
         </div>
 
         <div class="mb-3">
-          <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">Email address</label>
+          <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold" style="font-size:0.875rem;">Email address</label>
           {{ form.email }}
           {% if form.email.errors %}
             <div class="text-danger small mt-1">{% for e in form.email.errors %}{{ e }}{% endfor %}</div>
@@ -47,7 +45,7 @@
         </div>
 
         <div class="mb-3">
-          <label for="{{ form.password1.id_for_label }}" class="form-label fw-semibold">Password</label>
+          <label for="{{ form.password1.id_for_label }}" class="form-label fw-semibold" style="font-size:0.875rem;">Password</label>
           {{ form.password1 }}
           {% if form.password1.errors %}
             <div class="text-danger small mt-1">{% for e in form.password1.errors %}{{ e }}{% endfor %}</div>
@@ -55,7 +53,7 @@
         </div>
 
         <div class="mb-4">
-          <label for="{{ form.password2.id_for_label }}" class="form-label fw-semibold">Confirm password</label>
+          <label for="{{ form.password2.id_for_label }}" class="form-label fw-semibold" style="font-size:0.875rem;">Confirm password</label>
           {{ form.password2 }}
           {% if form.password2.errors %}
             <div class="text-danger small mt-1">{% for e in form.password2.errors %}{{ e }}{% endfor %}</div>
@@ -63,21 +61,26 @@
         </div>
 
         {% if form.non_field_errors %}
-          <div class="alert alert-danger">
-            {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+          <div class="alert alert-danger rounded-3 py-2 px-3 small">
+            <i class="bi bi-exclamation-circle me-1"></i>{% for e in form.non_field_errors %}{{ e }}{% endfor %}
           </div>
         {% endif %}
 
         <div class="d-grid">
-          <button type="submit" class="btn btn-primary btn-lg">
-            <i class="bi bi-person-check me-2"></i>Create account
+          <button type="submit" class="btn btn-apex btn-lg">
+            <i class="bi bi-check2-circle me-2"></i>Create my account
           </button>
         </div>
+
+        <p class="text-center text-muted mt-3 mb-0" style="font-size:0.78rem;">
+          By creating an account you agree this is a <strong>demo simulator</strong> — no real money involved.
+        </p>
       </form>
 
       <hr class="my-4" />
-      <p class="text-center text-muted mb-0">
-        Already have an account? <a href="{% url 'login' %}" class="fw-semibold">Sign in</a>
+      <p class="text-center mb-0" style="font-size:0.875rem;color:#64748B;">
+        Already have an account?
+        <a href="{% url 'login' %}" class="fw-semibold text-decoration-none" style="color:#4F46E5;">Sign in</a>
       </p>
 
     </div>

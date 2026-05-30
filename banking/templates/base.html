@@ -3,39 +3,211 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}Banking Simulator{% endblock %}</title>
+  <title>{% block title %}Apex{% endblock %}</title>
 
-  <!-- Bootstrap 5 CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-  <!-- Bootstrap Icons -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
-    rel="stylesheet"
-  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
 
   <style>
+    :root {
+      --apex-navy:   #0B0F1A;
+      --apex-indigo: #4F46E5;
+      --apex-indigo-hover: #4338CA;
+      --apex-green:  #10B981;
+      --apex-bg:     #F4F6FB;
+      --apex-card-shadow: 0 2px 16px rgba(15, 18, 40, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      background-color: #f0f4f8;
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      background-color: var(--apex-bg);
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #1E293B;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    .navbar-brand span {
-      color: #0d6efd;
+
+    main { flex: 1; }
+
+    /* ── Navbar ───────────────────────────────────────── */
+    .apex-nav {
+      background-color: var(--apex-navy);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 0.6rem 0;
+    }
+
+    .apex-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+
+    .apex-brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--apex-indigo) 0%, #818CF8 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: -1px;
+      flex-shrink: 0;
+    }
+
+    .apex-brand-name {
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: #fff;
+      text-transform: uppercase;
+    }
+
+    .apex-nav .nav-link {
+      color: rgba(255,255,255,0.65) !important;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+
+    .apex-nav .nav-link:hover { color: #fff !important; }
+
+    .apex-nav .btn-outline-light {
+      border-color: rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.8);
+      font-size: 0.825rem;
+      padding: 0.3rem 0.9rem;
+    }
+
+    .apex-nav .btn-outline-light:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.4);
+      color: #fff;
+    }
+
+    .apex-nav .btn-primary {
+      background: var(--apex-indigo);
+      border-color: var(--apex-indigo);
+      font-size: 0.825rem;
+      padding: 0.3rem 0.9rem;
+      font-weight: 600;
+    }
+
+    .apex-nav .btn-primary:hover {
+      background: var(--apex-indigo-hover);
+      border-color: var(--apex-indigo-hover);
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: rgba(255,255,255,0.75);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .user-badge .avatar {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--apex-indigo), #818CF8);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
       font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
     }
+
+    /* ── Auth cards ──────────────────────────────────── */
     .auth-card {
       max-width: 460px;
-      margin: 5rem auto;
+      margin: 3.5rem auto;
       border: none;
-      border-radius: 1rem;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      border-radius: 1.25rem;
+      box-shadow: var(--apex-card-shadow);
+      background: #fff;
     }
+
+    /* ── Info cards on dashboard ─────────────────────── */
     .info-card {
       border: none;
-      border-radius: 0.75rem;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      border-radius: 1rem;
+      box-shadow: var(--apex-card-shadow);
+      background: #fff;
+      transition: box-shadow 0.2s;
+    }
+
+    .info-card:hover { box-shadow: 0 4px 24px rgba(15,18,40,0.12); }
+
+    /* ── Form controls ───────────────────────────────── */
+    .form-control:focus {
+      border-color: var(--apex-indigo);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    .btn-apex {
+      background: var(--apex-indigo);
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      padding: 0.65rem 1.25rem;
+      border-radius: 0.6rem;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn-apex:hover {
+      background: var(--apex-indigo-hover);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .btn-apex:active { transform: translateY(0); }
+
+    /* ── Icon circles ────────────────────────────────── */
+    .icon-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Footer ──────────────────────────────────────── */
+    .apex-footer {
+      background-color: var(--apex-navy);
+      color: rgba(255,255,255,0.35);
+      font-size: 0.78rem;
+      text-align: center;
+      padding: 1.25rem 1rem;
+    }
+
+    .apex-footer a { color: rgba(255,255,255,0.5); text-decoration: none; }
+    .apex-footer a:hover { color: rgba(255,255,255,0.75); }
+
+    /* ── Alerts ──────────────────────────────────────── */
+    .alert-success {
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #065F46;
+    }
+
+    .alert-danger {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      color: #991B1B;
     }
   </style>
 
@@ -43,44 +215,46 @@
 </head>
 
 <body>
-  <!-- Navigation bar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav class="apex-nav navbar navbar-expand-lg">
     <div class="container">
-      <a class="navbar-brand" href="{% url 'dashboard' %}">
-        <i class="bi bi-bank me-2"></i><span>BankSim</span>
+      <a class="apex-brand" href="{% url 'dashboard' %}">
+        <div class="apex-brand-icon">A</div>
+        <span class="apex-brand-name">Apex</span>
       </a>
+
       <button
-        class="navbar-toggler"
+        class="navbar-toggler border-0"
         type="button"
         data-bs-toggle="collapse"
         data-bs-target="#navbarNav"
+        style="color:rgba(255,255,255,.65)"
       >
         <span class="navbar-toggler-icon"></span>
       </button>
 
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto align-items-center">
+        <ul class="navbar-nav ms-auto align-items-center gap-1">
           {% if user.is_authenticated %}
-            <li class="nav-item">
-              <span class="nav-link text-light">
-                <i class="bi bi-person-circle me-1"></i>
-                {{ user.get_full_name }}
-              </span>
+            <li class="nav-item me-2">
+              <div class="user-badge">
+                <div class="avatar">{{ user.get_short_name|slice:":1"|upper }}</div>
+                <span>{{ user.get_full_name }}</span>
+              </div>
             </li>
             <li class="nav-item">
               <form method="post" action="{% url 'logout' %}" class="d-inline">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-outline-light btn-sm ms-2">
-                  <i class="bi bi-box-arrow-right me-1"></i>Logout
+                <button type="submit" class="btn btn-outline-light btn-sm">
+                  <i class="bi bi-box-arrow-right me-1"></i>Sign out
                 </button>
               </form>
             </li>
           {% else %}
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'login' %}">Login</a>
+              <a class="nav-link" href="{% url 'login' %}">Sign in</a>
             </li>
             <li class="nav-item">
-              <a class="btn btn-primary btn-sm ms-2" href="{% url 'register' %}">Register</a>
+              <a class="btn btn-primary btn-sm ms-1" href="{% url 'register' %}">Open account</a>
             </li>
           {% endif %}
         </ul>
@@ -88,11 +262,10 @@
     </div>
   </nav>
 
-  <!-- Flash messages -->
   {% if messages %}
     <div class="container mt-3">
       {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3" role="alert">
           {{ message }}
           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -100,19 +273,15 @@
     </div>
   {% endif %}
 
-  <!-- Main content -->
   <main>
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Footer -->
-  <footer class="text-center text-muted py-4 mt-5 border-top">
-    <small>&copy; 2026 BankSim</small>
+  <footer class="apex-footer mt-auto">
+    <span>&copy; 2026 Apex &mdash; For learning and testing purposes only. Not a real bank.</span>
   </footer>
 
-  <!-- Bootstrap 5 JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>

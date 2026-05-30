@@ -1,12 +1,7 @@
 {% extends "base.html" %}
-{% comment %}
-  login.html — User login page.
-  Extends base.html. Renders LoginForm (email + password).
-  On success, Django redirects to LOGIN_REDIRECT_URL (/dashboard/).
-  The 'next' hidden input preserves the original destination after login.
-{% endcomment %}
+{% comment %}login.html — Apex sign-in page{% endcomment %}
 
-{% block title %}Sign In — BankSim{% endblock %}
+{% block title %}Sign In — Apex{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -14,20 +9,21 @@
     <div class="card-body p-4 p-md-5">
 
       <div class="text-center mb-4">
-        <i class="bi bi-shield-lock-fill fs-1 text-primary"></i>
-        <h2 class="fw-bold mt-2">Welcome back</h2>
-        <p class="text-muted">Sign in to your account</p>
+        <div class="mx-auto mb-3" style="width:52px;height:52px;background:linear-gradient(135deg,#4F46E5 0%,#818CF8 100%);border-radius:14px;display:flex;align-items:center;justify-content:center;">
+          <span style="color:#fff;font-size:1.4rem;font-weight:800;letter-spacing:-1px;">A</span>
+        </div>
+        <h2 class="fw-bold mb-1" style="font-size:1.5rem;">Welcome back to Apex</h2>
+        <p class="text-muted" style="font-size:0.9rem;">Sign in to access your account</p>
       </div>
 
       <form method="post" novalidate>
         {% csrf_token %}
-
         {% if next %}
           <input type="hidden" name="next" value="{{ next }}" />
         {% endif %}
 
         <div class="mb-3">
-          <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">Email address</label>
+          <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold" style="font-size:0.875rem;">Email address</label>
           {{ form.username }}
           {% if form.username.errors %}
             <div class="text-danger small mt-1">{% for e in form.username.errors %}{{ e }}{% endfor %}</div>
@@ -35,7 +31,7 @@
         </div>
 
         <div class="mb-4">
-          <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">Password</label>
+          <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold" style="font-size:0.875rem;">Password</label>
           {{ form.password }}
           {% if form.password.errors %}
             <div class="text-danger small mt-1">{% for e in form.password.errors %}{{ e }}{% endfor %}</div>
@@ -43,21 +39,22 @@
         </div>
 
         {% if form.non_field_errors %}
-          <div class="alert alert-danger">
-            {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+          <div class="alert alert-danger rounded-3 py-2 px-3 small">
+            <i class="bi bi-exclamation-circle me-1"></i>{% for e in form.non_field_errors %}{{ e }}{% endfor %}
           </div>
         {% endif %}
 
         <div class="d-grid">
-          <button type="submit" class="btn btn-primary btn-lg">
+          <button type="submit" class="btn btn-apex btn-lg">
             <i class="bi bi-box-arrow-in-right me-2"></i>Sign in
           </button>
         </div>
       </form>
 
       <hr class="my-4" />
-      <p class="text-center text-muted mb-0">
-        Don't have an account? <a href="{% url 'register' %}" class="fw-semibold">Create one</a>
+      <p class="text-center mb-0" style="font-size:0.875rem;color:#64748B;">
+        Don't have an account?
+        <a href="{% url 'register' %}" class="fw-semibold text-decoration-none" style="color:#4F46E5;">Open one — it's free</a>
       </p>
 
     </div>

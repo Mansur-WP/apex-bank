@@ -1,6 +1,6 @@
-# BankSim — Banking Simulator
+# Apex — Banking Simulator
 
-A Django-based banking simulator built in phases. Phase 1 covers authentication and project setup.
+Apex is a mock banking simulator built for learning and testing purposes. It is not a real bank but looks and feels like one. Built in phases with Django + PostgreSQL.
 
 ## Run & Operate
 

@@ -63,7 +63,7 @@ class RegisterView(CreateView):
         login(self.request, self.object)
         messages.success(
             self.request,
-            f"Welcome, {self.object.get_short_name()}! Your account has been created.",
+            f"Welcome to Apex, {self.object.get_short_name()}! Your account is ready.",
         )
         return response
 
