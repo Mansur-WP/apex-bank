@@ -1,0 +1,21 @@
+kind = "web"
+previewPath = "/"
+title = "Banking Simulator"
+version = "1.0.0"
+id = "artifacts/banking-app"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20501
+
+[services.development]
+run = "cd /home/runner/workspace/banking && python manage.py runserver 0.0.0.0:$PORT"
+
+[services.env]
+PORT = "20501"
