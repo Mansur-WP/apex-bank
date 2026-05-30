@@ -1,26 +1,10 @@
-<!--
-  login.html — User login page.
-
-  Why it exists:
-      Provides the HTML form that accepts an email and password, then
-      submits them to CustomLoginView for authentication.
-
-  What it does:
-      - Extends base.html for consistent layout.
-      - Renders LoginForm fields with Bootstrap styling.
-      - Passes the `next` query parameter through a hidden input so Django
-        redirects users to the page they tried to access after login (e.g.
-        if they hit /dashboard/ while logged out, they land back on
-        /dashboard/ after logging in successfully).
-      - Shows non-field errors (wrong password, inactive account, etc.)
-        surfaced by Django's AuthenticationForm.
-
-  How it connects:
-      - CustomLoginView (accounts/views.py) renders this template on GET
-        and reuses it on a failed POST with form errors attached.
-      - On success, Django redirects to LOGIN_REDIRECT_URL (/dashboard/).
--->
 {% extends "base.html" %}
+{% comment %}
+  login.html — User login page.
+  Extends base.html. Renders LoginForm (email + password).
+  On success, Django redirects to LOGIN_REDIRECT_URL (/dashboard/).
+  The 'next' hidden input preserves the original destination after login.
+{% endcomment %}
 
 {% block title %}Sign In — BankSim{% endblock %}
 
@@ -29,7 +13,6 @@
   <div class="card auth-card">
     <div class="card-body p-4 p-md-5">
 
-      <!-- Header -->
       <div class="text-center mb-4">
         <i class="bi bi-shield-lock-fill fs-1 text-primary"></i>
         <h2 class="fw-bold mt-2">Welcome back</h2>
@@ -39,41 +22,29 @@
       <form method="post" novalidate>
         {% csrf_token %}
 
-        <!-- Preserve the `next` redirect target if present -->
         {% if next %}
           <input type="hidden" name="next" value="{{ next }}" />
         {% endif %}
 
-        <!-- Email -->
         <div class="mb-3">
-          <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
-            Email address
-          </label>
+          <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">Email address</label>
           {{ form.username }}
           {% if form.username.errors %}
-            <div class="text-danger small mt-1">
-              {% for error in form.username.errors %}{{ error }}{% endfor %}
-            </div>
+            <div class="text-danger small mt-1">{% for e in form.username.errors %}{{ e }}{% endfor %}</div>
           {% endif %}
         </div>
 
-        <!-- Password -->
         <div class="mb-4">
-          <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">
-            Password
-          </label>
+          <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">Password</label>
           {{ form.password }}
           {% if form.password.errors %}
-            <div class="text-danger small mt-1">
-              {% for error in form.password.errors %}{{ error }}{% endfor %}
-            </div>
+            <div class="text-danger small mt-1">{% for e in form.password.errors %}{{ e }}{% endfor %}</div>
           {% endif %}
         </div>
 
-        <!-- Non-field errors (wrong credentials, inactive account) -->
         {% if form.non_field_errors %}
           <div class="alert alert-danger">
-            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            {% for e in form.non_field_errors %}{{ e }}{% endfor %}
           </div>
         {% endif %}
 
@@ -86,8 +57,7 @@
 
       <hr class="my-4" />
       <p class="text-center text-muted mb-0">
-        Don't have an account?
-        <a href="{% url 'register' %}" class="fw-semibold">Create one</a>
+        Don't have an account? <a href="{% url 'register' %}" class="fw-semibold">Create one</a>
       </p>
 
     </div>
