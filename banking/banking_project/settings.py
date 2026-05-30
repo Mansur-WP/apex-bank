@@ -36,11 +36,25 @@ DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = ["*"]
 
+# Trust the X-Forwarded-Proto header set by Replit's HTTPS proxy so Django
+# knows the connection is HTTPS (required for correct CSRF origin checking).
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+
+# Build trusted origins from wildcard patterns plus any explicit domains
+# injected by the Replit environment (REPLIT_DOMAINS is comma-separated).
+_replit_domains = os.environ.get("REPLIT_DOMAINS", "")
+_extra_origins = [
+    f"https://{d.strip()}"
+    for d in _replit_domains.split(",")
+    if d.strip()
+]
+
 CSRF_TRUSTED_ORIGINS = [
     "https://*.replit.dev",
     "https://*.repl.co",
     "https://*.replit.app",
-]
+] + _extra_origins
 
 # ---------------------------------------------------------------------------
 # Application definition
