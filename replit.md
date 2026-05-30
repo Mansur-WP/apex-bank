@@ -1,45 +1,65 @@
-# [Project name]
+# BankSim — Banking Simulator
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A Django-based banking simulator built in phases. Phase 1 covers authentication and project setup.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `Start application` workflow — runs the Django dev server on port 8000
+- `cd banking && python manage.py runserver 0.0.0.0:8000` — manual start
+- `cd banking && python manage.py makemigrations` — create new migrations
+- `cd banking && python manage.py migrate` — apply migrations
+- `cd banking && python manage.py createsuperuser` — create an admin user
+- Required env: `DATABASE_URL` — PostgreSQL connection string (already configured)
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Python 3.11, Django 5.2
+- Database: PostgreSQL via psycopg2-binary + dj-database-url
+- Templates: Django templates + Bootstrap 5 (CDN)
+- Auth: Django's built-in auth system with a custom user model (email-based)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `banking/` — Django project root
+- `banking/banking_project/settings.py` — central configuration (DB, apps, auth)
+- `banking/banking_project/urls.py` — root URL router
+- `banking/accounts/models.py` — CustomUser model (source of truth for users)
+- `banking/accounts/views.py` — RegisterView, LoginView, LogoutView, DashboardView
+- `banking/accounts/forms.py` — RegistrationForm, LoginForm
+- `banking/accounts/urls.py` — /accounts/register|login|logout/
+- `banking/accounts/dashboard_urls.py` — /dashboard/
+- `banking/templates/base.html` — master layout (nav, Bootstrap, messages)
+- `banking/templates/accounts/` — register.html, login.html, dashboard.html
+- `banking/requirements.txt` — Python dependencies
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Custom user model from day one** — uses email (not username) as login credential; declared as `AUTH_USER_MODEL` before any migrations so future ForeignKeys use `settings.AUTH_USER_MODEL` without painful retrofitting.
+- **App-per-concern structure** — each phase gets its own Django app (accounts, bank_accounts, transfers, ledger); root `urls.py` stays clean with one `include()` per app.
+- **Dashboard URL at top level** — `/dashboard/` lives outside `/accounts/` so Phase 2+ apps can live at `/bank/`, `/transfers/`, `/ledger/` without URL nesting.
+- **dj-database-url** — reads DATABASE_URL env var; no credentials hardcoded anywhere.
+- **Class-based views** — RegisterView, LoginView, LogoutView, DashboardView all use CBVs for clean extension in future phases.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Phase 1: User registration, login, logout, and a dashboard showing full name and email.
+
+Future phases:
+- Phase 2: Bank accounts (checking/savings)
+- Phase 3: Transfers and transaction history
+- Phase 4: Ledger system
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+_Populate as you build._
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Django 5+ requires logout via POST (CSRF protection) — the base template includes a form for this.
+- Always run `makemigrations accounts` then `migrate` after changing `accounts/models.py`.
+- Future model ForeignKeys to the user must use `ForeignKey(settings.AUTH_USER_MODEL)`, never `ForeignKey(User)`.
+- `SESSION_SECRET` env var is used as Django's `SECRET_KEY`.
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- See the `pnpm-workspace` skill for the existing Node.js monorepo context

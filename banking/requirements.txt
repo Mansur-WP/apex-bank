@@ -1,0 +1,15 @@
+# requirements.txt — Python dependencies for the banking simulator.
+#
+# Why it exists:
+#     Records every package the project depends on so another developer
+#     (or a production server) can reproduce the exact environment with:
+#         pip install -r requirements.txt
+#
+# How it connects:
+#     pip reads this file. The installed packages are what Django, psycopg2,
+#     and dj-database-url use at runtime.
+
+Django==5.2.14
+psycopg2-binary==2.9.12
+dj-database-url==3.1.2
+python-dotenv==1.2.2

@@ -1,0 +1,128 @@
+<!--
+  register.html — User registration page.
+
+  Why it exists:
+      Provides the HTML form that collects a new user's first name, last
+      name, email, and password.
+
+  What it does:
+      - Extends base.html to inherit the nav, messages, and Bootstrap.
+      - Renders every field in RegistrationForm with Bootstrap's form-group
+        styling and Django's error messages.
+      - Submits via POST to the same URL (RegisterView handles both GET/POST).
+      - Includes {% csrf_token %} — required by Django's CSRF middleware.
+
+  How it connects:
+      - RegisterView (accounts/views.py) renders this template on GET and
+        passes back form errors on a failed POST.
+      - On success, RegisterView redirects to /dashboard/.
+-->
+{% extends "base.html" %}
+
+{% block title %}Create Account — BankSim{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card auth-card">
+    <div class="card-body p-4 p-md-5">
+
+      <!-- Header -->
+      <div class="text-center mb-4">
+        <i class="bi bi-person-plus-fill fs-1 text-primary"></i>
+        <h2 class="fw-bold mt-2">Create your account</h2>
+        <p class="text-muted">Start your banking journey</p>
+      </div>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- First name & Last name — side by side on wider screens -->
+        <div class="row g-3 mb-3">
+          <div class="col-sm-6">
+            <label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold">
+              First name
+            </label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}
+              <div class="text-danger small mt-1">
+                {% for error in form.first_name.errors %}{{ error }}{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="col-sm-6">
+            <label for="{{ form.last_name.id_for_label }}" class="form-label fw-semibold">
+              Last name
+            </label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}
+              <div class="text-danger small mt-1">
+                {% for error in form.last_name.errors %}{{ error }}{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+          <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
+            Email address
+          </label>
+          {{ form.email }}
+          {% if form.email.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.email.errors %}{{ error }}{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Password -->
+        <div class="mb-3">
+          <label for="{{ form.password1.id_for_label }}" class="form-label fw-semibold">
+            Password
+          </label>
+          {{ form.password1 }}
+          {% if form.password1.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.password1.errors %}{{ error }}{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Confirm password -->
+        <div class="mb-4">
+          <label for="{{ form.password2.id_for_label }}" class="form-label fw-semibold">
+            Confirm password
+          </label>
+          {{ form.password2 }}
+          {% if form.password2.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.password2.errors %}{{ error }}{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Non-field errors (e.g. password mismatch) -->
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-person-check me-2"></i>Create account
+          </button>
+        </div>
+      </form>
+
+      <hr class="my-4" />
+      <p class="text-center text-muted mb-0">
+        Already have an account?
+        <a href="{% url 'login' %}" class="fw-semibold">Sign in</a>
+      </p>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
