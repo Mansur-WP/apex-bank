@@ -6,10 +6,10 @@ Why it exists:
     HTTP requests, interact with models/forms, and return rendered responses.
 
 What it does:
-    RegisterView   — handles GET (show form) and POST (validate + create user)
+    RegisterView    — handles GET (show form) and POST (validate + create user)
     CustomLoginView — wraps Django's LoginView to use our LoginForm
     CustomLogoutView — wraps Django's LogoutView (POST-only for CSRF safety)
-    DashboardView  — login-required page showing user profile info
+    DashboardView   — login-required page; passes user + bank account to template
 
 How it connects:
     - URLs in accounts/urls.py and accounts/dashboard_urls.py map paths to
@@ -19,16 +19,22 @@ How it connects:
     - settings.LOGIN_URL, LOGIN_REDIRECT_URL, LOGOUT_REDIRECT_URL control
       where redirects land.
 
+Phase 2 changes:
+    DashboardView.get_context_data() now fetches the user's Account via the
+    reverse OneToOne accessor (request.user.account) and passes it to the
+    template. A try/except guards against the rare case where the account
+    does not exist yet (e.g. a user created before Phase 2 was deployed).
+
 Scalability note:
-    DashboardView will be extended in future phases to show account balances,
-    recent transactions, and quick-transfer actions. Only this view and its
-    template need to change — the auth flow stays the same.
+    Phase 3 (transfers) will extend get_context_data() to also inject recent
+    transactions. The view's structure stays the same — only the context grows.
 """
 
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, TemplateView
 
@@ -43,8 +49,9 @@ class RegisterView(CreateView):
     POST — validates input, creates the user, logs them in automatically,
            and redirects to the dashboard.
 
-    Using CreateView keeps the boilerplate minimal while giving us a clean
-    hook (form_valid) to log the user in right after account creation.
+    The post_save signal on CustomUser (bank_accounts/signals.py) fires
+    immediately after super().form_valid() saves the user, so by the time
+    the user reaches the dashboard the bank account already exists.
     """
 
     form_class = RegistrationForm
@@ -52,35 +59,26 @@ class RegisterView(CreateView):
     success_url = reverse_lazy("dashboard")
 
     def form_valid(self, form):
-        """
-        Called after successful validation.
-        Saves the user, logs them in (so they don't have to log in again
-        after registering), then lets the parent redirect to success_url.
-        """
         response = super().form_valid(form)
         login(self.request, self.object)
-        messages.success(self.request, f"Welcome, {self.object.get_short_name()}! Your account has been created.")
+        messages.success(
+            self.request,
+            f"Welcome, {self.object.get_short_name()}! Your account has been created.",
+        )
         return response
 
     def dispatch(self, request, *args, **kwargs):
         """Redirect already-authenticated users away from the register page."""
         if request.user.is_authenticated:
-            return self.handle_no_permission() if False else __import__("django.shortcuts", fromlist=["redirect"]).redirect("dashboard")
+            return redirect("dashboard")
         return super().dispatch(request, *args, **kwargs)
 
 
 class CustomLoginView(LoginView):
     """
-    Login view.
-
-    Wraps Django's built-in LoginView to:
-    - Use our email-based LoginForm.
-    - Redirect authenticated users away from the login page.
-
-    All brute-force protection and session management is handled by
-    Django's LoginView — we only customise the form and template.
+    Login view — wraps Django's built-in LoginView with our email-based form.
+    All brute-force protection and session management is inherited.
     """
-
     form_class = LoginForm
     template_name = "accounts/login.html"
     redirect_authenticated_user = True
@@ -88,10 +86,7 @@ class CustomLoginView(LoginView):
 
 class CustomLogoutView(LogoutView):
     """
-    Logout view.
-
-    Django 5.x requires logout via POST for CSRF safety. The base template
-    includes a small form that submits via POST to this view.
+    Logout view — POST-only (Django 5 CSRF requirement).
     LOGOUT_REDIRECT_URL in settings controls where users land afterward.
     """
     pass
@@ -101,24 +96,31 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     """
     Main dashboard — the landing page after login.
 
-    LoginRequiredMixin redirects unauthenticated requests to LOGIN_URL
-    (configured in settings.py) automatically — no manual check needed.
+    LoginRequiredMixin redirects unauthenticated users to LOGIN_URL
+    automatically. No manual auth check needed.
 
-    Context provided to the template:
-        user  — the logged-in CustomUser instance (available automatically
-                via Django's auth context processor; listed here for clarity)
+    Context injected into the template:
+        user    — the logged-in CustomUser instance
+        account — the user's Account instance (Phase 2), or None if missing
 
-    Scalability note:
-        In future phases, override get_context_data() to inject account
-        balances, recent transactions, and notifications into this view
-        without changing the URL config or the login guard.
+    Phase 2: account is fetched via the reverse OneToOne accessor
+    `request.user.account`. The RelatedObjectDoesNotExist exception is caught
+    so the dashboard degrades gracefully for any user who somehow lacks an
+    account (e.g. data created before the signal was in place).
     """
 
     template_name = "accounts/dashboard.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # request.user is the logged-in CustomUser instance.
-        # Explicitly passing it here documents the contract for the template.
         context["user"] = self.request.user
+
+        # Fetch the linked bank account via the reverse OneToOne accessor.
+        # If no account exists (edge case), pass None so the template can
+        # show a graceful fallback instead of raising an unhandled exception.
+        try:
+            context["account"] = self.request.user.account
+        except self.request.user.__class__.account.RelatedObjectDoesNotExist:
+            context["account"] = None
+
         return context

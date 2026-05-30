@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Phase 1: authentication and user management
     "accounts",
+    # Phase 2: bank account layer
+    "bank_accounts",
 ]
 
 MIDDLEWARE = [

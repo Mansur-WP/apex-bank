@@ -1,24 +1,27 @@
 <!--
-  dashboard.html — Authenticated user dashboard.
+  dashboard.html — Authenticated user dashboard (Phase 2).
 
   Why it exists:
-      This is the central landing page after login and the home screen of
-      the banking simulator. Phase 1 shows user profile info. Future phases
-      will extend this page to show account balances, recent transactions,
-      and quick-action buttons.
+      Central landing page after login; shows the user's identity and
+      bank account information in one place.
 
-  What it does:
-      - Extends base.html.
+  What it does (Phase 2):
+      - Extends base.html for consistent layout.
       - Greets the user by first name.
-      - Displays a profile card with full name and email address.
-      - Leaves clearly labelled "Phase 2+" placeholder cards so the layout
-        doesn't feel sparse and the future structure is obvious.
+      - Profile card: full name + email address.
+      - Account card: account number + current balance (formatted as currency).
+      - Phase 3 placeholder card for transfers / transaction history.
+
+  Context variables (provided by DashboardView.get_context_data):
+      user    — CustomUser instance  (first_name, last_name, email, date_joined)
+      account — Account instance     (account_number, balance, created_at)
+                or None if the account is somehow missing.
 
   How it connects:
-      - DashboardView (accounts/views.py) renders this template and passes
-        the `user` context variable (the logged-in CustomUser).
-      - LoginRequiredMixin on DashboardView ensures this template is never
-        rendered for unauthenticated users.
+      DashboardView in accounts/views.py fetches `account` via the reverse
+      OneToOne accessor user.account and injects it here.
+      Phase 3 will add `recent_transactions` to the context without changing
+      the view's auth logic or the URL config.
 -->
 {% extends "base.html" %}
 
@@ -27,7 +30,7 @@
 {% block content %}
 <div class="container py-5">
 
-  <!-- Page header -->
+  <!-- ── Page header ─────────────────────────────────────────────── -->
   <div class="mb-4">
     <h1 class="fw-bold">Good day, {{ user.get_short_name }} 👋</h1>
     <p class="text-muted">Here's your account overview.</p>
@@ -35,7 +38,7 @@
 
   <div class="row g-4">
 
-    <!-- ── Profile card ─────────────────────────────────────── -->
+    <!-- ── Profile card ──────────────────────────────────────────── -->
     <div class="col-md-6 col-lg-4">
       <div class="card info-card h-100">
         <div class="card-body">
@@ -44,25 +47,22 @@
               <i class="bi bi-person-fill fs-4 text-primary"></i>
             </div>
             <div>
-              <p class="text-muted small mb-0">Your profile</p>
-              <h5 class="fw-bold mb-0">Account details</h5>
+              <p class="text-muted small mb-0">Identity</p>
+              <h5 class="fw-bold mb-0">Your profile</h5>
             </div>
           </div>
-
           <hr />
 
-          <!-- Full name -->
           <div class="mb-3">
             <p class="text-muted small mb-1">
-              <i class="bi bi-person me-1"></i> Full name
+              <i class="bi bi-person me-1"></i>Full name
             </p>
             <p class="fw-semibold mb-0 fs-5">{{ user.get_full_name }}</p>
           </div>
 
-          <!-- Email address -->
           <div>
             <p class="text-muted small mb-1">
-              <i class="bi bi-envelope me-1"></i> Email address
+              <i class="bi bi-envelope me-1"></i>Email address
             </p>
             <p class="fw-semibold mb-0">{{ user.email }}</p>
           </div>
@@ -70,31 +70,75 @@
       </div>
     </div>
 
-    <!-- ── Account balance placeholder (Phase 2) ───────────── -->
+    <!-- ── Bank account card ─────────────────────────────────────── -->
     <div class="col-md-6 col-lg-4">
-      <div class="card info-card h-100 border-dashed opacity-50">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center text-center py-5">
-          <i class="bi bi-wallet2 fs-1 text-secondary mb-3"></i>
-          <h6 class="fw-semibold text-secondary">Bank Accounts</h6>
-          <p class="text-muted small">Coming in Phase 2</p>
+      {% if account %}
+        <div class="card info-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3">
+                <i class="bi bi-credit-card-fill fs-4 text-success"></i>
+              </div>
+              <div>
+                <p class="text-muted small mb-0">Banking</p>
+                <h5 class="fw-bold mb-0">Bank account</h5>
+              </div>
+            </div>
+            <hr />
+
+            <div class="mb-3">
+              <p class="text-muted small mb-1">
+                <i class="bi bi-hash me-1"></i>Account number
+              </p>
+              <!-- Format as XXXX XXXX XX for readability -->
+              <p class="fw-semibold mb-0 fs-5 font-monospace">
+                {{ account.account_number|slice:":4" }}&nbsp;
+                {{ account.account_number|slice:"4:8" }}&nbsp;
+                {{ account.account_number|slice:"8:" }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-muted small mb-1">
+                <i class="bi bi-currency-dollar me-1"></i>Current balance
+              </p>
+              <p class="fw-bold mb-0 fs-4 text-success">
+                ${{ account.balance|floatformat:2 }}
+              </p>
+            </div>
+          </div>
+          <div class="card-footer bg-transparent border-top-0 text-muted small pb-3 px-3">
+            <i class="bi bi-calendar3 me-1"></i>
+            Opened {{ account.created_at|date:"F j, Y" }}
+          </div>
         </div>
-      </div>
+
+      {% else %}
+        <!-- Graceful fallback — account missing for this user -->
+        <div class="card info-card h-100 border-warning">
+          <div class="card-body d-flex flex-column align-items-center justify-content-center text-center py-5">
+            <i class="bi bi-exclamation-triangle fs-1 text-warning mb-3"></i>
+            <h6 class="fw-semibold">No account found</h6>
+            <p class="text-muted small">Please contact support.</p>
+          </div>
+        </div>
+      {% endif %}
     </div>
 
-    <!-- ── Recent transactions placeholder (Phase 3) ─────────── -->
+    <!-- ── Transfers & history placeholder (Phase 3) ─────────────── -->
     <div class="col-md-6 col-lg-4">
-      <div class="card info-card h-100 border-dashed opacity-50">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center text-center py-5">
+      <div class="card info-card h-100" style="border: 2px dashed #dee2e6;">
+        <div class="card-body d-flex flex-column align-items-center justify-content-center text-center py-5 opacity-50">
           <i class="bi bi-arrow-left-right fs-1 text-secondary mb-3"></i>
           <h6 class="fw-semibold text-secondary">Transfers &amp; History</h6>
-          <p class="text-muted small">Coming in Phase 3</p>
+          <p class="text-muted small mb-0">Coming in Phase 3</p>
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- Member since -->
+  <!-- ── Footer meta ───────────────────────────────────────────────── -->
   <p class="text-muted small mt-5">
     <i class="bi bi-calendar-check me-1"></i>
     Member since {{ user.date_joined|date:"F j, Y" }}
