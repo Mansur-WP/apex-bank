@@ -56,6 +56,14 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.replit.app",
 ] + _extra_origins
 
+# Allow cookies to be set inside cross-origin iframes (the Replit preview pane
+# is a cross-origin iframe). Without SameSite=None the browser silently drops
+# the CSRF cookie, causing every form POST to 403.
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True
+
 # ---------------------------------------------------------------------------
 # Application definition
 # ---------------------------------------------------------------------------
