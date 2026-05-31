@@ -93,6 +93,8 @@ INSTALLED_APPS = [
     "accounts",
     # Phase 2: bank account layer
     "bank_accounts",
+    # Phase 3: money transfers
+    "transfers",
 ]
 
 MIDDLEWARE = [

@@ -36,6 +36,9 @@ urlpatterns = [
     # so future apps can co-exist at their own paths cleanly
     path("dashboard/", include("accounts.dashboard_urls")),
 
+    # Phase 3: money transfers
+    path("transfers/", include("transfers.urls")),
+
     # Root redirect: visiting / sends the user to the dashboard
     # (which itself redirects to login if not authenticated)
     path("", RedirectView.as_view(url="/dashboard/", permanent=False)),
