@@ -61,7 +61,7 @@
       </div>
     </div>
     <div style="font-size:1.75rem;font-weight:800;color:#fff;letter-spacing:-0.5px;">
-      ${{ total_circulation|floatformat:2 }}
+      ₦{{ total_circulation|floatformat:2 }}
     </div>
     <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:0.15rem;">Sum of all account balances</div>
   </div>
@@ -113,7 +113,7 @@
             <div style="font-weight:600;color:#0F172A;">{{ txn.receiver_account.user.get_full_name }}</div>
             <div style="font-size:0.7rem;color:#94A3B8;">{{ txn.receiver_account.account_number }}</div>
           </td>
-          <td style="padding:0.85rem 1rem;text-align:right;font-weight:700;color:#10B981;white-space:nowrap;">${{ txn.amount|floatformat:2 }}</td>
+          <td style="padding:0.85rem 1rem;text-align:right;font-weight:700;color:#10B981;white-space:nowrap;">₦{{ txn.amount|floatformat:2 }}</td>
           <td style="padding:0.85rem 1.25rem;text-align:right;font-size:0.75rem;color:#94A3B8;white-space:nowrap;">{{ txn.created_at|date:"M j, Y · g:i A" }}</td>
         </tr>
         {% empty %}

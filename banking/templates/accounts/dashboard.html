@@ -29,7 +29,7 @@
       </div>
     </div>
     <div style="font-size:2.25rem;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:0.25rem;">
-      ${{ account.balance|floatformat:2 }}
+      ₦{{ account.balance|floatformat:2 }}
     </div>
     <div style="font-size:0.78rem;color:rgba(255,255,255,0.55);">Available to spend</div>
   </div>
@@ -104,7 +104,7 @@
       </div>
       <div style="text-align:right;">
         <div class="{% if item.direction == 'sent' %}txn-amt-sent{% else %}txn-amt-received{% endif %}">
-          {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}${{ item.txn.amount|floatformat:2 }}
+          {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}₦{{ item.txn.amount|floatformat:2 }}
         </div>
         <div class="txn-date">{{ item.txn.created_at|date:"M j, g:i A" }}</div>
       </div>
@@ -131,9 +131,9 @@
           <div class="modal-body px-4 pb-4">
             <div style="text-align:center;padding:1rem 0 1.5rem;">
               <div style="font-size:2rem;font-weight:800;color:{% if item.direction == 'sent' %}#EF4444{% else %}#10B981{% endif %};">
-                {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}${{ item.txn.amount|floatformat:2 }}
+                {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}₦{{ item.txn.amount|floatformat:2 }}
               </div>
-              <div style="font-size:0.78rem;color:#94A3B8;margin-top:0.25rem;">USD</div>
+              <div style="font-size:0.78rem;color:#94A3B8;margin-top:0.25rem;">NGN</div>
             </div>
             <div class="modal-detail-row">
               <span class="modal-detail-label">Reference ID</span>

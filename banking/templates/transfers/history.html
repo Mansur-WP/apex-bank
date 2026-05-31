@@ -92,7 +92,7 @@
     </div>
     <div style="text-align:right;flex-shrink:0;">
       <div class="{% if item.direction == 'sent' %}txn-amt-sent{% else %}txn-amt-received{% endif %}">
-        {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}${{ item.txn.amount|floatformat:2 }}
+        {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}₦{{ item.txn.amount|floatformat:2 }}
       </div>
       <div class="txn-date">{{ item.txn.created_at|date:"M j, Y · g:i A" }}</div>
       <div style="margin-top:0.15rem;">
@@ -124,9 +124,9 @@
         <div class="modal-body px-4 pb-4">
           <div style="text-align:center;padding:1.25rem 0 1.5rem;">
             <div style="font-size:2.25rem;font-weight:800;color:{% if item.direction == 'sent' %}#EF4444{% else %}#10B981{% endif %};">
-              {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}${{ item.txn.amount|floatformat:2 }}
+              {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}₦{{ item.txn.amount|floatformat:2 }}
             </div>
-            <div style="font-size:0.78rem;color:#94A3B8;margin-top:0.25rem;">USD · Completed</div>
+            <div style="font-size:0.78rem;color:#94A3B8;margin-top:0.25rem;">NGN · Completed</div>
           </div>
           <div class="modal-detail-row">
             <span class="modal-detail-label">Reference ID</span>
