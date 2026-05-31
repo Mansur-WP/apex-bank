@@ -1,178 +1,183 @@
-{% extends "base.html" %}
-{% comment %}dashboard.html — Apex main dashboard (Phase 2){% endcomment %}
+{% extends "base_app.html" %}
+{% comment %}dashboard.html — Apex Bank main dashboard{% endcomment %}
 
-{% block title %}Dashboard — Apex{% endblock %}
-
-{% block extra_head %}
-<style>
-  .balance-amount {
-    font-size: 2rem;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: #10B981;
-  }
-
-  .account-number {
-    font-family: 'Courier New', monospace;
-    letter-spacing: 0.15em;
-    font-size: 1.05rem;
-    color: #1E293B;
-  }
-
-  .section-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #94A3B8;
-    margin-bottom: 0.25rem;
-  }
-
-  .stat-value {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1E293B;
-  }
-
-  .coming-soon-card {
-    border: 2px dashed #E2E8F0;
-    background: #FAFBFD;
-    border-radius: 1rem;
-    box-shadow: none;
-  }
-
-  .apex-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
-    color: #4F46E5;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 0.2rem 0.55rem;
-    border-radius: 99px;
-  }
-</style>
-{% endblock %}
+{% block title %}Dashboard — Apex Bank{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container py-5">
 
-  <!-- Page header -->
-  <div class="mb-5 d-flex align-items-start justify-content-between flex-wrap gap-3">
-    <div>
-      <p class="text-muted mb-1" style="font-size:0.85rem;font-weight:500;">
-        <i class="bi bi-house-door me-1"></i>Overview
-      </p>
-      <h1 class="fw-bold mb-1" style="font-size:1.75rem;">
-        Hello, {{ user.get_short_name }} 👋
-      </h1>
-      <p class="text-muted mb-0" style="font-size:0.9rem;">Here's everything in your Apex account.</p>
+<!-- Welcome row -->
+<div style="margin-bottom:1.75rem;">
+  <h1 style="font-size:1.45rem;font-weight:800;color:#0F172A;margin-bottom:0.2rem;">
+    Good day, {{ user.get_short_name }} 👋
+  </h1>
+  <p style="font-size:0.875rem;color:#64748B;margin:0;">Here's an overview of your Apex account.</p>
+</div>
+
+<!-- Top stat cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.25rem;margin-bottom:1.75rem;">
+
+  <!-- Balance card -->
+  {% if account %}
+  <div class="apex-card balance-card card-pad" style="position:relative;overflow:hidden;">
+    <div style="position:absolute;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.05);top:-40px;right:-40px;"></div>
+    <div style="position:absolute;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.05);bottom:-20px;right:60px;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <span style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);">Current Balance</span>
+      <div style="width:36px;height:36px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+        <i class="bi bi-wallet2" style="color:#fff;font-size:0.9rem;"></i>
+      </div>
     </div>
-    <div class="apex-tag">
-      <i class="bi bi-shield-check"></i> Apex Banking
+    <div style="font-size:2.25rem;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:0.25rem;">
+      ${{ account.balance|floatformat:2 }}
     </div>
+    <div style="font-size:0.78rem;color:rgba(255,255,255,0.55);">Available to spend</div>
   </div>
 
-  <div class="row g-4">
-
-    <!-- Balance card -->
-    {% if account %}
-    <div class="col-md-6 col-lg-4">
-      <div class="card info-card h-100">
-        <div class="card-body p-4">
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <div>
-              <p class="section-label mb-0">Current balance</p>
-            </div>
-            <div class="icon-circle" style="background:#ECFDF5;">
-              <i class="bi bi-wallet2 fs-5" style="color:#10B981;"></i>
-            </div>
-          </div>
-          <div class="balance-amount">${{ account.balance|floatformat:2 }}</div>
-          <p class="text-muted small mt-1 mb-3">Available to spend</p>
-          <hr class="my-3" style="border-color:#F1F5F9;" />
-          <div>
-            <p class="section-label">Account number</p>
-            <p class="account-number mb-0">
-              {{ account.account_number|slice:":4" }}&thinsp;{{ account.account_number|slice:"4:8" }}&thinsp;{{ account.account_number|slice:"8:" }}
-            </p>
-          </div>
-        </div>
-        <div class="card-footer bg-transparent border-0 px-4 pb-3">
-          <span class="text-muted" style="font-size:0.78rem;">
-            <i class="bi bi-calendar3 me-1"></i>Opened {{ account.created_at|date:"N j, Y" }}
-          </span>
-        </div>
+  <!-- Account number card -->
+  <div class="apex-card card-pad">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <span class="stat-label">Account Number</span>
+      <div class="icon-circle" style="background:#EFF6FF;">
+        <i class="bi bi-credit-card-fill" style="color:#1E40AF;font-size:0.95rem;"></i>
       </div>
     </div>
-    {% else %}
-    <div class="col-md-6 col-lg-4">
-      <div class="card info-card h-100 border-warning">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center text-center py-5">
-          <i class="bi bi-exclamation-triangle fs-1 text-warning mb-3"></i>
-          <h6 class="fw-semibold">No account found</h6>
-          <p class="text-muted small">Please contact Apex support.</p>
-        </div>
+    <div style="font-family:'Courier New',monospace;font-size:1.35rem;font-weight:700;letter-spacing:0.12em;color:#0F172A;margin-bottom:0.25rem;">
+      {{ account.account_number|slice:":4" }}&thinsp;{{ account.account_number|slice:"4:8" }}&thinsp;{{ account.account_number|slice:"8:" }}
+    </div>
+    <div style="font-size:0.78rem;color:#64748B;">
+      <i class="bi bi-calendar3 me-1"></i>Opened {{ account.created_at|date:"N j, Y" }}
+    </div>
+  </div>
+  {% else %}
+  <div class="apex-card card-pad" style="border:2px dashed #E2E8F0;text-align:center;padding:2rem;">
+    <i class="bi bi-exclamation-triangle" style="font-size:1.5rem;color:#F59E0B;"></i>
+    <div style="font-weight:600;margin-top:0.5rem;color:#334155;">No account found</div>
+    <div style="font-size:0.78rem;color:#94A3B8;margin-top:0.25rem;">Please contact Apex support</div>
+  </div>
+  {% endif %}
+
+  <!-- Quick actions card -->
+  <div class="apex-card card-pad">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <span class="stat-label">Quick Actions</span>
+      <div class="icon-circle" style="background:#ECFDF5;">
+        <i class="bi bi-lightning-fill" style="color:#10B981;font-size:0.95rem;"></i>
       </div>
     </div>
-    {% endif %}
-
-    <!-- Profile card -->
-    <div class="col-md-6 col-lg-4">
-      <div class="card info-card h-100">
-        <div class="card-body p-4">
-          <div class="d-flex align-items-center justify-content-between mb-4">
-            <div>
-              <p class="section-label mb-0">Account holder</p>
-            </div>
-            <div class="icon-circle" style="background:#EEF2FF;">
-              <i class="bi bi-person-fill fs-5" style="color:#4F46E5;"></i>
-            </div>
-          </div>
-          <div class="mb-3">
-            <p class="section-label">Full name</p>
-            <p class="stat-value mb-0">{{ user.get_full_name }}</p>
-          </div>
-          <div class="mb-3">
-            <p class="section-label">Email address</p>
-            <p class="stat-value mb-0" style="word-break:break-all;">{{ user.email }}</p>
-          </div>
-          <div>
-            <p class="section-label">Member since</p>
-            <p class="stat-value mb-0">{{ user.date_joined|date:"N j, Y" }}</p>
-          </div>
-        </div>
-      </div>
+    <div style="display:flex;flex-direction:column;gap:0.6rem;">
+      <a href="{% url 'transfer' %}" class="btn-blue" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.6rem 1rem;text-decoration:none;font-size:0.875rem;">
+        <i class="bi bi-send-fill"></i> Send Money
+      </a>
+      <a href="{% url 'history' %}" class="btn-ghost" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.55rem 1rem;text-decoration:none;font-size:0.875rem;">
+        <i class="bi bi-clock-history"></i> View History
+      </a>
     </div>
-
-    <!-- Send Money card -->
-    <div class="col-md-6 col-lg-4">
-      <div class="card info-card h-100">
-        <div class="card-body p-4 d-flex flex-column">
-          <div class="d-flex align-items-center justify-content-between mb-4">
-            <div>
-              <p class="section-label mb-0">Quick actions</p>
-            </div>
-            <div class="icon-circle" style="background:#EEF2FF;">
-              <i class="bi bi-arrow-left-right fs-5" style="color:#4F46E5;"></i>
-            </div>
-          </div>
-          <p class="text-muted small mb-4" style="line-height:1.6;">
-            Send money instantly to any Apex account using their account number.
-          </p>
-          <div class="mt-auto">
-            <a href="{% url 'transfer' %}" class="btn btn-apex w-100">
-              <i class="bi bi-send me-2"></i>Send Money
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
 
 </div>
+
+<!-- Recent transactions -->
+<div class="apex-card" style="margin-bottom:1.5rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid #F1F5F9;">
+    <div>
+      <div style="font-size:0.95rem;font-weight:700;color:#0F172A;">Recent Transactions</div>
+      <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.1rem;">Your latest 5 movements</div>
+    </div>
+    <a href="{% url 'history' %}" style="font-size:0.78rem;font-weight:600;color:#1E40AF;text-decoration:none;">
+      View all <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+  </div>
+
+  {% if recent_transactions %}
+    {% for item in recent_transactions %}
+    <div class="txn-item" data-bs-toggle="modal" data-bs-target="#txnModal{{ item.txn.pk }}">
+      <div class="txn-icon {% if item.direction == 'sent' %}txn-icon-sent{% else %}txn-icon-received{% endif %}">
+        <i class="bi {% if item.direction == 'sent' %}bi-arrow-up-right{% else %}bi-arrow-down-left{% endif %}"></i>
+      </div>
+      <div class="txn-info">
+        <div class="txn-name">
+          {% if item.direction == 'sent' %}To: {% else %}From: {% endif %}
+          {{ item.counterpart.user.get_full_name }}
+        </div>
+        <div class="txn-ref">{{ item.txn.reference }}{% if item.txn.note %} · {{ item.txn.note }}{% endif %}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="{% if item.direction == 'sent' %}txn-amt-sent{% else %}txn-amt-received{% endif %}">
+          {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}${{ item.txn.amount|floatformat:2 }}
+        </div>
+        <div class="txn-date">{{ item.txn.created_at|date:"M j, g:i A" }}</div>
+      </div>
+    </div>
+
+    <!-- Transaction detail modal -->
+    <div class="modal fade apex-modal" id="txnModal{{ item.txn.pk }}" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header border-0 pb-0">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <div class="txn-icon {% if item.direction == 'sent' %}txn-icon-sent{% else %}txn-icon-received{% endif %}" style="width:48px;height:48px;">
+                <i class="bi {% if item.direction == 'sent' %}bi-arrow-up-right{% else %}bi-arrow-down-left{% endif %}"></i>
+              </div>
+              <div>
+                <div style="font-weight:700;font-size:1rem;color:#0F172A;">Transaction Details</div>
+                <div class="{% if item.direction == 'sent' %}badge-sent{% else %}badge-success{% endif %}">
+                  {% if item.direction == 'sent' %}Sent{% else %}Received{% endif %}
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body px-4 pb-4">
+            <div style="text-align:center;padding:1rem 0 1.5rem;">
+              <div style="font-size:2rem;font-weight:800;color:{% if item.direction == 'sent' %}#EF4444{% else %}#10B981{% endif %};">
+                {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}${{ item.txn.amount|floatformat:2 }}
+              </div>
+              <div style="font-size:0.78rem;color:#94A3B8;margin-top:0.25rem;">USD</div>
+            </div>
+            <div class="modal-detail-row">
+              <span class="modal-detail-label">Reference ID</span>
+              <span class="modal-detail-value" style="font-family:'Courier New',monospace;font-size:0.78rem;">{{ item.txn.reference }}</span>
+            </div>
+            <div class="modal-detail-row">
+              <span class="modal-detail-label">From account</span>
+              <span class="modal-detail-value">{{ item.txn.sender_account.account_number }}</span>
+            </div>
+            <div class="modal-detail-row">
+              <span class="modal-detail-label">To account</span>
+              <span class="modal-detail-value">{{ item.txn.receiver_account.account_number }}</span>
+            </div>
+            <div class="modal-detail-row">
+              <span class="modal-detail-label">Date &amp; time</span>
+              <span class="modal-detail-value">{{ item.txn.created_at|date:"N j, Y · g:i A" }}</span>
+            </div>
+            {% if item.txn.note %}
+            <div class="modal-detail-row">
+              <span class="modal-detail-label">Note</span>
+              <span class="modal-detail-value">{{ item.txn.note }}</span>
+            </div>
+            {% endif %}
+            <div class="modal-detail-row">
+              <span class="modal-detail-label">Status</span>
+              <span class="modal-detail-value"><span class="badge-success">Completed</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="padding:3rem;text-align:center;">
+      <div style="width:64px;height:64px;background:#F1F5F9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+        <i class="bi bi-clock-history" style="font-size:1.5rem;color:#94A3B8;"></i>
+      </div>
+      <div style="font-weight:600;color:#334155;margin-bottom:0.35rem;">No transactions yet</div>
+      <div style="font-size:0.82rem;color:#94A3B8;margin-bottom:1.25rem;">Send money to get started</div>
+      <a href="{% url 'transfer' %}" class="btn-blue" style="text-decoration:none;padding:0.55rem 1.25rem;font-size:0.875rem;">
+        <i class="bi bi-send me-1"></i> Send Money
+      </a>
+    </div>
+  {% endif %}
+</div>
+
 {% endblock %}

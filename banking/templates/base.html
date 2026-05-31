@@ -3,284 +3,157 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}Apex{% endblock %}</title>
-
+  <title>{% block title %}Apex Bank{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
-
   <style>
     :root {
-      --apex-navy:   #0B0F1A;
-      --apex-indigo: #4F46E5;
-      --apex-indigo-hover: #4338CA;
-      --apex-green:  #10B981;
-      --apex-bg:     #F4F6FB;
-      --apex-card-shadow: 0 2px 16px rgba(15, 18, 40, 0.08);
+      --blue-800: #1E40AF;
+      --blue-700: #1D4ED8;
+      --blue-600: #2563EB;
+      --blue-50:  #EFF6FF;
+      --green:    #10B981;
+      --red:      #EF4444;
+      --slate-900: #0F172A;
+      --slate-700: #334155;
+      --slate-500: #64748B;
+      --slate-300: #CBD5E1;
+      --slate-100: #F1F5F9;
+      --slate-50:  #F8FAFC;
     }
-
     * { box-sizing: border-box; }
-
     body {
-      background-color: var(--apex-bg);
       font-family: 'Inter', system-ui, sans-serif;
-      color: #1E293B;
+      background: var(--slate-100);
+      color: var(--slate-900);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
-
     main { flex: 1; }
 
-    /* ── Navbar ───────────────────────────────────────── */
-    .apex-nav {
-      background-color: var(--apex-navy);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      padding: 0.6rem 0;
-    }
-
-    .apex-brand {
+    /* Auth layout */
+    .auth-wrapper {
+      min-height: 100vh;
       display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      text-decoration: none;
     }
-
-    .apex-brand-icon {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, var(--apex-indigo) 0%, #818CF8 100%);
-      border-radius: 8px;
+    .auth-panel-left {
+      width: 480px;
+      flex-shrink: 0;
+      background: linear-gradient(145deg, #1E3A8A 0%, #1E40AF 40%, #2563EB 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    @media (max-width: 900px) { .auth-panel-left { display: none; } }
+    .auth-panel-right {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.85rem;
-      color: #fff;
-      font-weight: 800;
-      letter-spacing: -1px;
-      flex-shrink: 0;
+      padding: 2rem;
+      background: var(--slate-50);
     }
-
-    .apex-brand-name {
-      font-size: 1.1rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      color: #fff;
-      text-transform: uppercase;
-    }
-
-    .apex-nav .nav-link {
-      color: rgba(255,255,255,0.65) !important;
-      font-size: 0.875rem;
-      font-weight: 500;
-      transition: color 0.15s;
-    }
-
-    .apex-nav .nav-link:hover { color: #fff !important; }
-
-    .apex-nav .btn-outline-light {
-      border-color: rgba(255,255,255,0.25);
-      color: rgba(255,255,255,0.8);
-      font-size: 0.825rem;
-      padding: 0.3rem 0.9rem;
-    }
-
-    .apex-nav .btn-outline-light:hover {
-      background: rgba(255,255,255,0.1);
-      border-color: rgba(255,255,255,0.4);
-      color: #fff;
-    }
-
-    .apex-nav .btn-primary {
-      background: var(--apex-indigo);
-      border-color: var(--apex-indigo);
-      font-size: 0.825rem;
-      padding: 0.3rem 0.9rem;
-      font-weight: 600;
-    }
-
-    .apex-nav .btn-primary:hover {
-      background: var(--apex-indigo-hover);
-      border-color: var(--apex-indigo-hover);
-    }
-
-    .user-badge {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      color: rgba(255,255,255,0.75);
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-
-    .user-badge .avatar {
-      width: 28px;
-      height: 28px;
-      background: linear-gradient(135deg, var(--apex-indigo), #818CF8);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: #fff;
-      flex-shrink: 0;
-    }
-
-    /* ── Auth cards ──────────────────────────────────── */
     .auth-card {
-      max-width: 460px;
-      margin: 3.5rem auto;
-      border: none;
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
       border-radius: 1.25rem;
-      box-shadow: var(--apex-card-shadow);
-      background: #fff;
+      box-shadow: 0 4px 24px rgba(15,18,40,0.10);
+      padding: 2.5rem;
+    }
+    @media (max-width: 480px) {
+      .auth-card { padding: 1.75rem 1.25rem; border-radius: 1rem; }
     }
 
-    /* ── Info cards on dashboard ─────────────────────── */
-    .info-card {
-      border: none;
-      border-radius: 1rem;
-      box-shadow: var(--apex-card-shadow);
-      background: #fff;
-      transition: box-shadow 0.2s;
+    /* Brand mark */
+    .brand-mark {
+      width: 44px; height: 44px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; font-weight: 800; color: #fff;
+    }
+    .brand-mark-blue {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--blue-800), var(--blue-600));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; font-weight: 800; color: #fff;
     }
 
-    .info-card:hover { box-shadow: 0 4px 24px rgba(15,18,40,0.12); }
-
-    /* ── Form controls ───────────────────────────────── */
-    .form-control:focus {
-      border-color: var(--apex-indigo);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
-    }
-
-    .btn-apex {
-      background: var(--apex-indigo);
-      border: none;
-      color: #fff;
-      font-weight: 600;
-      padding: 0.65rem 1.25rem;
-      border-radius: 0.6rem;
-      transition: background 0.15s, transform 0.1s;
-    }
-
-    .btn-apex:hover {
-      background: var(--apex-indigo-hover);
-      color: #fff;
-      transform: translateY(-1px);
-    }
-
-    .btn-apex:active { transform: translateY(0); }
-
-    /* ── Icon circles ────────────────────────────────── */
-    .icon-circle {
-      width: 48px;
-      height: 48px;
+    /* Left panel decorations */
+    .panel-circle {
+      position: absolute;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      background: rgba(255,255,255,0.05);
     }
 
-    /* ── Footer ──────────────────────────────────────── */
-    .apex-footer {
-      background-color: var(--apex-navy);
-      color: rgba(255,255,255,0.35);
-      font-size: 0.78rem;
-      text-align: center;
-      padding: 1.25rem 1rem;
+    /* Form controls */
+    .form-control {
+      border: 1.5px solid #E2E8F0;
+      border-radius: 0.6rem;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.9rem;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .form-control:focus {
+      border-color: var(--blue-600);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+      outline: none;
+    }
+    .form-label { font-weight: 600; font-size: 0.82rem; color: var(--slate-700); margin-bottom: 0.4rem; }
+
+    /* Buttons */
+    .btn-primary-apex {
+      background: var(--blue-800);
+      color: #fff;
+      border: none;
+      border-radius: 0.65rem;
+      font-weight: 600;
+      padding: 0.7rem 1.5rem;
+      font-size: 0.92rem;
+      width: 100%;
+      transition: background .15s, transform .1s, box-shadow .15s;
+      cursor: pointer;
+    }
+    .btn-primary-apex:hover {
+      background: var(--blue-700);
+      box-shadow: 0 4px 12px rgba(30,64,175,0.3);
+      transform: translateY(-1px);
+      color: #fff;
+    }
+    .btn-primary-apex:active { transform: translateY(0); }
+
+    /* Alerts */
+    .apex-alert-danger {
+      background: #FEF2F2; border: 1px solid #FECACA;
+      color: #991B1B; border-radius: 0.6rem;
+      padding: 0.65rem 0.9rem; font-size: 0.85rem;
     }
 
-    .apex-footer a { color: rgba(255,255,255,0.5); text-decoration: none; }
-    .apex-footer a:hover { color: rgba(255,255,255,0.75); }
-
-    /* ── Alerts ──────────────────────────────────────── */
-    .alert-success {
-      background: #ECFDF5;
-      border: 1px solid #A7F3D0;
-      color: #065F46;
-    }
-
-    .alert-danger {
-      background: #FEF2F2;
-      border: 1px solid #FECACA;
-      color: #991B1B;
-    }
+    {% block extra_styles %}{% endblock %}
   </style>
-
   {% block extra_head %}{% endblock %}
 </head>
-
 <body>
-  <nav class="apex-nav navbar navbar-expand-lg">
-    <div class="container">
-      <a class="apex-brand" href="{% url 'dashboard' %}">
-        <div class="apex-brand-icon">A</div>
-        <span class="apex-brand-name">Apex</span>
-      </a>
-
-      <button
-        class="navbar-toggler border-0"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarNav"
-        style="color:rgba(255,255,255,.65)"
-      >
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto align-items-center gap-1">
-          {% if user.is_authenticated %}
-            <li class="nav-item me-2">
-              <div class="user-badge">
-                <div class="avatar">{{ user.get_short_name|slice:":1"|upper }}</div>
-                <span>{{ user.get_full_name }}</span>
-              </div>
-            </li>
-            <li class="nav-item">
-              <form method="post" action="{% url 'logout' %}" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-light btn-sm">
-                  <i class="bi bi-box-arrow-right me-1"></i>Sign out
-                </button>
-              </form>
-            </li>
-          {% else %}
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'login' %}">Sign in</a>
-            </li>
-            <li class="nav-item">
-              <a class="btn btn-primary btn-sm ms-1" href="{% url 'register' %}">Open account</a>
-            </li>
-          {% endif %}
-        </ul>
-      </div>
-    </div>
-  </nav>
-
   {% if messages %}
-    <div class="container mt-3">
+    <div style="position:fixed;top:1rem;right:1rem;z-index:9999;width:320px;">
       {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3" role="alert">
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm rounded-3 mb-2" style="font-size:0.875rem;">
           {{ message }}
           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
       {% endfor %}
     </div>
   {% endif %}
-
-  <main>
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer class="apex-footer mt-auto">
-    <span>&copy; 2026 Apex &mdash; For learning and testing purposes only. Not a real bank.</span>
-  </footer>
-
+  <main>{% block content %}{% endblock %}</main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   {% block extra_scripts %}{% endblock %}
 </body>

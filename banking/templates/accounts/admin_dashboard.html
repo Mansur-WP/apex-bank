@@ -1,0 +1,188 @@
+{% extends "base_app.html" %}
+{% comment %}admin_dashboard.html — Staff-only overview with stats and chart{% endcomment %}
+
+{% block title %}Admin Dashboard — Apex Bank{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:1.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+  <div>
+    <h1 style="font-size:1.35rem;font-weight:800;color:#0F172A;margin-bottom:0.3rem;">Admin Overview</h1>
+    <p style="font-size:0.875rem;color:#64748B;margin:0;">Platform-wide activity and statistics.</p>
+  </div>
+  <div style="display:inline-flex;align-items:center;gap:0.4rem;background:#FEF2F2;color:#991B1B;font-size:0.72rem;font-weight:700;padding:0.3rem 0.75rem;border-radius:99px;">
+    <i class="bi bi-shield-lock-fill"></i> Staff Access Only
+  </div>
+</div>
+
+<!-- Stat cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem;margin-bottom:1.75rem;">
+
+  <div class="apex-card card-pad">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+      <span class="stat-label">Total Users</span>
+      <div class="icon-circle" style="background:#EFF6FF;">
+        <i class="bi bi-people-fill" style="color:#1E40AF;font-size:1rem;"></i>
+      </div>
+    </div>
+    <div style="font-size:2rem;font-weight:800;color:#0F172A;letter-spacing:-0.5px;">{{ total_users }}</div>
+    <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.15rem;">Registered accounts</div>
+  </div>
+
+  <div class="apex-card card-pad">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+      <span class="stat-label">Total Accounts</span>
+      <div class="icon-circle" style="background:#ECFDF5;">
+        <i class="bi bi-credit-card-2-front-fill" style="color:#10B981;font-size:1rem;"></i>
+      </div>
+    </div>
+    <div style="font-size:2rem;font-weight:800;color:#0F172A;letter-spacing:-0.5px;">{{ total_accounts }}</div>
+    <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.15rem;">Bank accounts opened</div>
+  </div>
+
+  <div class="apex-card card-pad">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+      <span class="stat-label">Total Transactions</span>
+      <div class="icon-circle" style="background:#FEF3C7;">
+        <i class="bi bi-arrow-left-right" style="color:#D97706;font-size:1rem;"></i>
+      </div>
+    </div>
+    <div style="font-size:2rem;font-weight:800;color:#0F172A;letter-spacing:-0.5px;">{{ total_transactions }}</div>
+    <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.15rem;">All-time transfers</div>
+  </div>
+
+  <div class="apex-card card-pad balance-card" style="position:relative;overflow:hidden;">
+    <div style="position:absolute;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.05);top:-20px;right:-20px;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+      <span style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);">Money in Circulation</span>
+      <div style="width:36px;height:36px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+        <i class="bi bi-cash-coin" style="color:#fff;font-size:0.9rem;"></i>
+      </div>
+    </div>
+    <div style="font-size:1.75rem;font-weight:800;color:#fff;letter-spacing:-0.5px;">
+      ${{ total_circulation|floatformat:2 }}
+    </div>
+    <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:0.15rem;">Sum of all account balances</div>
+  </div>
+
+</div>
+
+<!-- Chart -->
+<div class="apex-card card-pad" style="margin-bottom:1.75rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+    <div>
+      <div style="font-size:0.95rem;font-weight:700;color:#0F172A;">Transaction Activity</div>
+      <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.1rem;">Transfers per day — last 7 days</div>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:0.4rem;background:#EFF6FF;color:#1D4ED8;font-size:0.72rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:99px;">
+      <i class="bi bi-bar-chart-fill"></i> 7-day view
+    </div>
+  </div>
+  <div style="position:relative;height:220px;">
+    <canvas id="txnChart"></canvas>
+  </div>
+</div>
+
+<!-- Recent transactions table -->
+<div class="apex-card" style="overflow:hidden;">
+  <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #F1F5F9;">
+    <div style="font-size:0.95rem;font-weight:700;color:#0F172A;">Recent Activity</div>
+    <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.1rem;">Latest 15 transfers across the platform</div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:0.825rem;">
+      <thead>
+        <tr style="background:#F8FAFC;">
+          <th style="padding:0.75rem 1.25rem;text-align:left;font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;white-space:nowrap;">Reference</th>
+          <th style="padding:0.75rem 1rem;text-align:left;font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;white-space:nowrap;">From</th>
+          <th style="padding:0.75rem 1rem;text-align:left;font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;white-space:nowrap;">To</th>
+          <th style="padding:0.75rem 1rem;text-align:right;font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;">Amount</th>
+          <th style="padding:0.75rem 1.25rem;text-align:right;font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;white-space:nowrap;">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for txn in recent_transactions %}
+        <tr style="border-top:1px solid #F1F5F9;transition:background .15s;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background=''">
+          <td style="padding:0.85rem 1.25rem;font-family:'Courier New',monospace;font-size:0.72rem;color:#475569;white-space:nowrap;">{{ txn.reference }}</td>
+          <td style="padding:0.85rem 1rem;">
+            <div style="font-weight:600;color:#0F172A;">{{ txn.sender_account.user.get_full_name }}</div>
+            <div style="font-size:0.7rem;color:#94A3B8;">{{ txn.sender_account.account_number }}</div>
+          </td>
+          <td style="padding:0.85rem 1rem;">
+            <div style="font-weight:600;color:#0F172A;">{{ txn.receiver_account.user.get_full_name }}</div>
+            <div style="font-size:0.7rem;color:#94A3B8;">{{ txn.receiver_account.account_number }}</div>
+          </td>
+          <td style="padding:0.85rem 1rem;text-align:right;font-weight:700;color:#10B981;white-space:nowrap;">${{ txn.amount|floatformat:2 }}</td>
+          <td style="padding:0.85rem 1.25rem;text-align:right;font-size:0.75rem;color:#94A3B8;white-space:nowrap;">{{ txn.created_at|date:"M j, Y · g:i A" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="padding:3rem;text-align:center;color:#94A3B8;">No transactions yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+  const ctx = document.getElementById('txnChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ chart_labels|safe }},
+      datasets: [{
+        label: 'Transactions',
+        data: {{ chart_data|safe }},
+        borderColor: '#1E40AF',
+        backgroundColor: 'rgba(30,64,175,0.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#fff',
+        pointBorderColor: '#1E40AF',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0F172A',
+          titleColor: '#94A3B8',
+          bodyColor: '#fff',
+          padding: 12,
+          cornerRadius: 8,
+          callbacks: {
+            label: ctx => ` ${ctx.raw} transfer${ctx.raw !== 1 ? 's' : ''}`,
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { font: { size: 11, family: 'Inter' }, color: '#94A3B8' }
+        },
+        y: {
+          beginAtZero: true,
+          border: { display: false, dash: [4, 4] },
+          grid: { color: '#F1F5F9' },
+          ticks: { stepSize: 1, font: { size: 11, family: 'Inter' }, color: '#94A3B8' }
+        }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

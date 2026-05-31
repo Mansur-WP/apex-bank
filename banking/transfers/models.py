@@ -1,36 +1,7 @@
 """
 transfers/models.py — Transaction model for Phase 3.
 
-Why it exists:
-    Every successful money transfer must leave a permanent, immutable record.
-    This model is that record — one row per completed transfer. It is never
-    edited after creation; the audit trail must be append-only.
-
-What it stores:
-    sender_account   — the account that was debited
-    receiver_account — the account that was credited
-    amount           — the exact amount moved (Decimal, 2 d.p.)
-    reference        — human-readable unique ID (e.g. "TXN-3F8A1C...")
-    created_at       — timestamp when the transfer completed
-
-How money conservation is guaranteed:
-    The transfer view uses transaction.atomic. Inside a single database
-    transaction:
-        1. sender.balance   -= amount  → debit
-        2. receiver.balance += amount  → credit
-        3. Transaction.objects.create(...)  → record
-    If any step fails (DB error, exception), the entire transaction rolls
-    back. Balances return to their pre-transfer state and no record is
-    written. It is impossible for money to disappear or be created:
-    every unit subtracted from one balance is added to exactly one other.
-
-    select_for_update() in the view locks both account rows during the
-    transaction, preventing concurrent transfers from reading stale balances.
-
-Reference format:
-    "TXN-" + first 16 chars of a UUID4 hex string, uppercased.
-    e.g. "TXN-3F8A1C4B9D2E7F01"
-    Unique at the DB level (unique=True on the field).
+Immutable audit record of every completed transfer.
 """
 
 import uuid
@@ -39,26 +10,11 @@ from django.db import models
 
 
 def generate_reference():
-    """Return a unique transaction reference string like 'TXN-3F8A1C4B9D2E7F01'."""
+    """Return a unique transaction reference like 'TXN-3F8A1C4B9D2E7F01'."""
     return "TXN-" + uuid.uuid4().hex[:16].upper()
 
 
 class Transaction(models.Model):
-    """
-    An immutable record of a completed money transfer.
-
-    Fields:
-        sender_account   — FK to bank_accounts.Account; the debited account.
-                           on_delete=PROTECT prevents deleting an account that
-                           has transfer history (financial records must persist).
-        receiver_account — FK to bank_accounts.Account; the credited account.
-                           Same protection.
-        amount           — amount transferred; always > 0 (enforced in the view).
-                           max_digits=12 matches Account.balance precision.
-        reference        — unique human-readable ID; never reused.
-        created_at       — immutable timestamp (auto_now_add=True).
-    """
-
     sender_account = models.ForeignKey(
         "bank_accounts.Account",
         on_delete=models.PROTECT,
@@ -75,6 +31,12 @@ class Transaction(models.Model):
         max_digits=12,
         decimal_places=2,
         verbose_name="Amount",
+    )
+    note = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        verbose_name="Note",
     )
     reference = models.CharField(
         max_length=24,

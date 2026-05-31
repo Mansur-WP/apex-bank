@@ -1,65 +1,101 @@
-# Apex — Banking Simulator
+# Apex Bank — Banking Simulator
 
-Apex is a mock banking simulator built for learning and testing purposes. It is not a real bank but looks and feels like one. Built in phases with Django + PostgreSQL.
+Apex Bank is a mock fintech banking simulator built for learning and testing purposes. It looks and feels like a real modern fintech app (Revolut / Kuda / Stripe style). Built in phases with Django + PostgreSQL.
 
 ## Run & Operate
 
-- `Start application` workflow — runs the Django dev server on port 8000
-- `cd banking && python manage.py runserver 0.0.0.0:8000` — manual start
-- `cd banking && python manage.py makemigrations` — create new migrations
+- `artifacts/banking-app: web` workflow — primary app server (port $PORT via proxy at localhost:80)
+- `Start application` workflow — secondary dev server on port 8000
+- `cd banking && python manage.py makemigrations <app>` — create new migrations
 - `cd banking && python manage.py migrate` — apply migrations
-- `cd banking && python manage.py createsuperuser` — create an admin user
+- `cd banking && python manage.py createsuperuser` — create an admin/staff user
 - Required env: `DATABASE_URL` — PostgreSQL connection string (already configured)
+- Required env: `SESSION_SECRET` — used as Django's `SECRET_KEY`
 
 ## Stack
 
 - Python 3.11, Django 5.2
 - Database: PostgreSQL via psycopg2-binary + dj-database-url
-- Templates: Django templates + Bootstrap 5 (CDN)
-- Auth: Django's built-in auth system with a custom user model (email-based)
+- Templates: Django templates (two base layouts: `base.html` for auth, `base_app.html` for app)
+- CSS: Custom design system (no framework dependency — all inline/custom CSS in base templates)
+- Icons: Bootstrap Icons (CDN)
+- Charts: Chart.js (CDN, admin dashboard only)
+- Font: Inter (Google Fonts CDN)
+- Auth: Django built-in auth system with custom email-based user model
+
+## URL Structure
+
+| Path | View | Notes |
+|------|------|-------|
+| `/` | → `/dashboard/` redirect | |
+| `/accounts/login/` | CustomLoginView | Auth page |
+| `/accounts/register/` | RegisterView | Auth page |
+| `/accounts/logout/` | CustomLogoutView | POST only |
+| `/dashboard/` | DashboardView | Requires login |
+| `/transfers/` | TransferView | Send money |
+| `/transfers/history/` | TransactionHistoryView | With search/filter |
+| `/profile/` | ProfileView | User info + password change |
+| `/profile/password/` | ChangePasswordView | POST handler |
+| `/admin-dashboard/` | AdminDashboardView | Staff only |
+| `/admin/` | Django admin | Staff only |
 
 ## Where things live
 
-- `banking/` — Django project root
-- `banking/banking_project/settings.py` — central configuration (DB, apps, auth)
+- `banking/banking_project/settings.py` — central config (DB, apps, auth, CSRF, cookie settings)
 - `banking/banking_project/urls.py` — root URL router
-- `banking/accounts/models.py` — CustomUser model (source of truth for users)
-- `banking/accounts/views.py` — RegisterView, LoginView, LogoutView, DashboardView
-- `banking/accounts/forms.py` — RegistrationForm, LoginForm
+- `banking/banking_project/middleware.py` — PartitionedCookiesMiddleware (CHIPS for iframe)
+- `banking/accounts/models.py` — CustomUser (email-based login)
+- `banking/accounts/views.py` — Auth + Dashboard + Profile + AdminDashboard views
 - `banking/accounts/urls.py` — /accounts/register|login|logout/
 - `banking/accounts/dashboard_urls.py` — /dashboard/
-- `banking/templates/base.html` — master layout (nav, Bootstrap, messages)
-- `banking/templates/accounts/` — register.html, login.html, dashboard.html
-- `banking/requirements.txt` — Python dependencies
+- `banking/accounts/profile_urls.py` — /profile/ and /profile/password/
+- `banking/accounts/admin_urls.py` — /admin-dashboard/
+- `banking/bank_accounts/models.py` — Account model (OneToOne to user, auto-created via signal)
+- `banking/transfers/models.py` — Transaction model (immutable audit record)
+- `banking/transfers/forms.py` — TransferForm (to_account_number, amount, note)
+- `banking/transfers/views.py` — TransferView, TransactionHistoryView
+- `banking/transfers/urls.py` — /transfers/ and /transfers/history/
+- `banking/templates/base.html` — Auth layout (split-screen: blue panel + form)
+- `banking/templates/base_app.html` — App layout (sidebar desktop, bottom nav mobile)
+- `banking/templates/accounts/` — login.html, register.html, dashboard.html, profile.html, admin_dashboard.html
+- `banking/templates/transfers/` — transfer.html, history.html
 
-## Architecture decisions
+## Design System
 
-- **Custom user model from day one** — uses email (not username) as login credential; declared as `AUTH_USER_MODEL` before any migrations so future ForeignKeys use `settings.AUTH_USER_MODEL` without painful retrofitting.
-- **App-per-concern structure** — each phase gets its own Django app (accounts, bank_accounts, transfers, ledger); root `urls.py` stays clean with one `include()` per app.
-- **Dashboard URL at top level** — `/dashboard/` lives outside `/accounts/` so Phase 2+ apps can live at `/bank/`, `/transfers/`, `/ledger/` without URL nesting.
-- **dj-database-url** — reads DATABASE_URL env var; no credentials hardcoded anywhere.
-- **Class-based views** — RegisterView, LoginView, LogoutView, DashboardView all use CBVs for clean extension in future phases.
+- **Primary:** Deep Blue (`#1E40AF`)
+- **Secondary:** Emerald Green (`#10B981`)
+- **Sidebar:** Dark navy (`#0F172A`)
+- **Page bg:** `#F1F5F9`
+- **Cards:** White, `border-radius: 1rem`, subtle shadow
+- **Sidebar:** 260px wide, fixed left, dark — collapsible on mobile
+- **Bottom nav:** Fixed bottom on mobile (Home, Send, History, Profile)
+- Auth pages use `base.html` (split-screen, no sidebar)
+- App pages use `base_app.html` (sidebar + bottom nav)
 
-## Product
+## Architecture Decisions
 
-Phase 1: User registration, login, logout, and a dashboard showing full name and email.
+- **Custom user model from day one** — email as login credential; `AUTH_USER_MODEL` set before any migrations.
+- **App-per-concern** — accounts, bank_accounts, transfers; each phase is its own app.
+- **CSRF_USE_SESSIONS = True** — CSRF token stored server-side in session; eliminates the separate `csrftoken` cookie which Django 5.2 can't stamp with `Partitioned` natively.
+- **CHIPS cookies** — `PartitionedCookiesMiddleware` monkey-patches `Morsel._reserved` + `Morsel._flags` to stamp `SameSite=None; Secure; Partitioned` on the session cookie, enabling the app to work inside the Replit cross-origin iframe.
+- **Middleware order** — `PartitionedCookiesMiddleware` is listed FIRST in MIDDLEWARE so it runs LAST on responses (after `SessionMiddleware` has set the cookie).
+- **transaction.atomic + select_for_update** — transfers lock both account rows before touching balances, preventing race conditions and guaranteeing money conservation.
+- **Transaction.on_delete=PROTECT** — financial records can never be silently deleted by cascading user/account deletion.
+- **dj-database-url** — reads DATABASE_URL env var; no credentials hardcoded.
 
-Future phases:
-- Phase 2: Bank accounts (checking/savings)
-- Phase 3: Transfers and transaction history
-- Phase 4: Ledger system
+## Phases
 
-## User preferences
-
-_Populate as you build._
+- **Phase 1 ✅** — User registration, login, logout, dashboard
+- **Phase 2 ✅** — Bank accounts (auto-created via signal, account numbers, balances)
+- **Phase 3 ✅** — Transfers (atomic, race-condition-safe), transaction history with search/filter, transaction detail modals
+- **Phase 4** — Ledger system (future)
+- **Design ✅** — Full fintech UI redesign (Revolut/Kuda/Stripe style), all 8 screens
 
 ## Gotchas
 
-- Django 5+ requires logout via POST (CSRF protection) — the base template includes a form for this.
-- Always run `makemigrations accounts` then `migrate` after changing `accounts/models.py`.
-- Future model ForeignKeys to the user must use `ForeignKey(settings.AUTH_USER_MODEL)`, never `ForeignKey(User)`.
-- `SESSION_SECRET` env var is used as Django's `SECRET_KEY`.
-
-## Pointers
-
-- See the `pnpm-workspace` skill for the existing Node.js monorepo context
+- Django 5+ requires logout via POST (CSRF) — all logout buttons are `<form method="post">`.
+- `CSRF_COOKIE_PARTITIONED` does NOT exist in Django 5.2 — `CSRF_USE_SESSIONS` is the correct fix.
+- `Morsel._flags.add("partitioned")` is required alongside `_reserved` — without it Python outputs `Partitioned=True` (invalid) instead of bare `Partitioned`.
+- Migrations: `makemigrations <app_name>` then `migrate` after any model change.
+- Future ForeignKeys to user: always `ForeignKey(settings.AUTH_USER_MODEL)`, never `ForeignKey(User)`.
+- Admin dashboard at `/admin-dashboard/` requires `is_staff=True` on the user.

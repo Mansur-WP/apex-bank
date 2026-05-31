@@ -1,201 +1,133 @@
-{% extends "base.html" %}
-{% comment %}transfer.html — Send money form (Phase 3){% endcomment %}
+{% extends "base_app.html" %}
+{% comment %}transfer.html — Send money form{% endcomment %}
 
-{% block title %}Send Money — Apex{% endblock %}
-
-{% block extra_head %}
-<style>
-  .transfer-card {
-    max-width: 560px;
-    margin: 0 auto;
-    border: none;
-    border-radius: 1.25rem;
-    box-shadow: 0 2px 24px rgba(15,18,40,0.10);
-    background: #fff;
-  }
-
-  .balance-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: #ECFDF5;
-    color: #065F46;
-    font-size: 0.8rem;
-    font-weight: 600;
-    padding: 0.3rem 0.75rem;
-    border-radius: 99px;
-  }
-
-  .section-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #94A3B8;
-    margin-bottom: 0.35rem;
-  }
-
-  .amount-prefix {
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
-    border-right: none;
-    border-radius: 0.6rem 0 0 0.6rem;
-    padding: 0 1rem;
-    font-weight: 700;
-    color: #64748B;
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-  }
-
-  .amount-field {
-    border-radius: 0 0.6rem 0.6rem 0 !important;
-  }
-
-  .divider-label {
-    position: relative;
-    text-align: center;
-    margin: 1.25rem 0;
-  }
-
-  .divider-label::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: #E2E8F0;
-  }
-
-  .divider-label span {
-    position: relative;
-    background: #fff;
-    padding: 0 0.75rem;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #94A3B8;
-  }
-
-  .account-badge {
-    font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
-    color: #4F46E5;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-  }
-
-  .back-link {
-    color: #64748B;
-    text-decoration: none;
-    font-size: 0.85rem;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    transition: color 0.15s;
-  }
-
-  .back-link:hover { color: #4F46E5; }
-
-  .warning-note {
-    background: #FFFBEB;
-    border: 1px solid #FDE68A;
-    border-radius: 0.6rem;
-    padding: 0.65rem 0.9rem;
-    font-size: 0.8rem;
-    color: #92400E;
-  }
-</style>
-{% endblock %}
+{% block title %}Send Money — Apex Bank{% endblock %}
+{% block page_title %}Send Money{% endblock %}
 
 {% block content %}
-<div class="container py-5">
 
-  <!-- Back link + heading -->
-  <div class="mb-4">
-    <a class="back-link" href="{% url 'dashboard' %}">
-      <i class="bi bi-arrow-left"></i> Back to dashboard
-    </a>
+<div style="max-width:680px;margin:0 auto;">
+
+  <!-- Page header -->
+  <div style="margin-bottom:1.75rem;">
+    <h1 style="font-size:1.35rem;font-weight:800;color:#0F172A;margin-bottom:0.3rem;">Send Money</h1>
+    <p style="font-size:0.875rem;color:#64748B;margin:0;">Transfer funds instantly to any Apex account.</p>
   </div>
 
-  <div class="mb-4 text-center">
-    <h1 class="fw-bold mb-1" style="font-size:1.6rem;">Send Money</h1>
-    <p class="text-muted mb-0" style="font-size:0.9rem;">
-      Transfers are instant and cannot be reversed.
-    </p>
-  </div>
+  <div style="display:grid;grid-template-columns:1fr;gap:1.25rem;">
 
-  <!-- Your account summary -->
-  {% if account %}
-  <div class="transfer-card p-4 mb-4">
-    <p class="section-label mb-2">Your account</p>
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-      <span class="account-badge">
-        {{ account.account_number|slice:":4" }}&thinsp;{{ account.account_number|slice:"4:8" }}&thinsp;{{ account.account_number|slice:"8:" }}
-      </span>
-      <span class="balance-pill">
-        <i class="bi bi-wallet2"></i>
-        Available: ${{ account.balance|floatformat:2 }}
-      </span>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Transfer form -->
-  <div class="transfer-card p-4 p-md-5">
-
-    <form method="post" novalidate>
-      {% csrf_token %}
-
-      <!-- Recipient account number -->
-      <div class="mb-4">
-        <label for="{{ form.to_account_number.id_for_label }}" class="form-label fw-semibold">
-          Recipient account number
-        </label>
-        {{ form.to_account_number }}
-        {% if form.to_account_number.errors %}
-          {% for error in form.to_account_number.errors %}
-            <div class="text-danger small mt-1">
-              <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
-            </div>
-          {% endfor %}
-        {% endif %}
-        <div class="text-muted small mt-1">Enter the 10-digit account number of the recipient.</div>
-      </div>
-
-      <div class="divider-label"><span>Amount to send</span></div>
-
-      <!-- Amount -->
-      <div class="mb-4">
-        <label for="{{ form.amount.id_for_label }}" class="form-label fw-semibold">Amount (USD)</label>
-        <div class="input-group">
-          <span class="amount-prefix">$</span>
-          {{ form.amount }}
+    <!-- Your account summary -->
+    {% if account %}
+    <div class="apex-card balance-card card-pad" style="position:relative;overflow:hidden;">
+      <div style="position:absolute;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.05);top:-30px;right:-30px;"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+        <div>
+          <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:0.3rem;">Your Account</div>
+          <div style="font-family:'Courier New',monospace;font-size:1.05rem;font-weight:700;color:#fff;letter-spacing:0.1em;">
+            {{ account.account_number|slice:":4" }}&thinsp;{{ account.account_number|slice:"4:8" }}&thinsp;{{ account.account_number|slice:"8:" }}
+          </div>
         </div>
-        {% if form.amount.errors %}
-          {% for error in form.amount.errors %}
-            <div class="text-danger small mt-1">
-              <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
-            </div>
-          {% endfor %}
-        {% endif %}
+        <div style="text-align:right;">
+          <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:0.3rem;">Available Balance</div>
+          <div style="font-size:1.35rem;font-weight:800;color:#fff;">${{ account.balance|floatformat:2 }}</div>
+        </div>
       </div>
+    </div>
+    {% endif %}
 
-      <!-- Warning -->
-      <div class="warning-note mb-4">
-        <i class="bi bi-shield-exclamation me-1"></i>
-        Double-check the account number. Apex cannot reverse a completed transfer.
+    <!-- Transfer form -->
+    <div class="apex-card card-pad">
+      <form method="post" novalidate id="transferForm">
+        {% csrf_token %}
+
+        <!-- Recipient -->
+        <div style="margin-bottom:1.25rem;">
+          <label for="{{ form.to_account_number.id_for_label }}" class="form-label">
+            <i class="bi bi-person-fill me-1" style="color:#1E40AF;"></i>Recipient Account Number
+          </label>
+          {{ form.to_account_number }}
+          {% if form.to_account_number.errors %}
+            {% for e in form.to_account_number.errors %}
+              <div class="field-error"><i class="bi bi-exclamation-circle"></i>{{ e }}</div>
+            {% endfor %}
+          {% endif %}
+          <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.35rem;">
+            Enter the exact 10-digit account number of the recipient.
+          </div>
+        </div>
+
+        <!-- Amount -->
+        <div style="margin-bottom:1.25rem;">
+          <label for="{{ form.amount.id_for_label }}" class="form-label">
+            <i class="bi bi-currency-dollar me-1" style="color:#10B981;"></i>Amount (USD)
+          </label>
+          <div style="position:relative;">
+            <span style="position:absolute;left:0.9rem;top:50%;transform:translateY(-50%);font-size:1rem;font-weight:700;color:#64748B;">$</span>
+            <input type="number" name="{{ form.amount.html_name }}" id="{{ form.amount.id_for_label }}"
+              class="form-control" placeholder="0.00" step="0.01" min="0.01"
+              style="padding-left:1.9rem;"
+              value="{{ form.amount.value|default:'' }}" />
+          </div>
+          {% if form.amount.errors %}
+            {% for e in form.amount.errors %}
+              <div class="field-error"><i class="bi bi-exclamation-circle"></i>{{ e }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <!-- Note -->
+        <div style="margin-bottom:1.75rem;">
+          <label for="{{ form.note.id_for_label }}" class="form-label">
+            <i class="bi bi-chat-text me-1" style="color:#64748B;"></i>Note <span style="font-weight:400;color:#94A3B8;">(optional)</span>
+          </label>
+          {{ form.note }}
+          {% if form.note.errors %}
+            {% for e in form.note.errors %}
+              <div class="field-error"><i class="bi bi-exclamation-circle"></i>{{ e }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <!-- Warning -->
+        <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:0.65rem;padding:0.8rem 1rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:0.6rem;">
+          <i class="bi bi-shield-exclamation" style="color:#D97706;margin-top:0.1rem;flex-shrink:0;"></i>
+          <span style="font-size:0.8rem;color:#92400E;line-height:1.5;">
+            Double-check the account number. Transfers on Apex are instant and <strong>cannot be reversed</strong>.
+          </span>
+        </div>
+
+        <button type="submit" class="btn-blue w-100" style="padding:0.8rem;font-size:0.95rem;">
+          <i class="bi bi-send-fill me-2"></i>Confirm Transfer
+        </button>
+      </form>
+    </div>
+
+    <!-- How transfers work -->
+    <div class="apex-card card-pad" style="background:#F8FAFC;">
+      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.85rem;">How it works</div>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:28px;height:28px;border-radius:50%;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="font-size:0.7rem;font-weight:800;color:#1E40AF;">1</span>
+          </div>
+          <span style="font-size:0.82rem;color:#475569;">Enter the recipient's 10-digit account number</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:28px;height:28px;border-radius:50%;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="font-size:0.7rem;font-weight:800;color:#1E40AF;">2</span>
+          </div>
+          <span style="font-size:0.82rem;color:#475569;">Enter the amount and an optional note</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:28px;height:28px;border-radius:50%;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="font-size:0.7rem;font-weight:800;color:#1E40AF;">3</span>
+          </div>
+          <span style="font-size:0.82rem;color:#475569;">Confirm — funds move instantly and atomically</span>
+        </div>
       </div>
-
-      <button type="submit" class="btn btn-apex w-100 py-3" style="font-size:1rem;">
-        <i class="bi bi-send me-2"></i>Send Money
-      </button>
-    </form>
+    </div>
 
   </div>
-
 </div>
+
 {% endblock %}
