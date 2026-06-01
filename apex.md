@@ -1,6 +1,6 @@
 # Apex Bank — Banking Simulator
 
-Apex Bank is a mock fintech banking simulator built for learning and testing purposes. It looks and feels like a real modern fintech app (Revolut / Kuda / Stripe style). Built in phases with Django + PostgreSQL.
+Apex Bank is a mock fintech banking simulator built for learning and testing purposes. It looks and feels like a real modern fintech app (Revolut / Kuda / Opay / Stripe style). Built in phases with Django + PostgreSQL.
 
 ## Run & Operate
 
