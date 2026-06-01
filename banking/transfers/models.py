@@ -1,7 +1,7 @@
 """
-transfers/models.py — Transaction model for Phase 3.
+transfers/models.py — Transaction and ledger models.
 
-Immutable audit record of every completed transfer.
+Phase 7 adds a Double-Entry Ledger system via LedgerEntry.
 """
 
 import uuid
@@ -16,6 +16,8 @@ def generate_reference():
 
 
 class Transaction(models.Model):
+    """Immutable audit record of every completed transfer."""
+
     sender_account = models.ForeignKey(
         "bank_accounts.Account",
         on_delete=models.PROTECT,
@@ -69,3 +71,57 @@ class Transaction(models.Model):
             f"{self.receiver_account.account_number} | "
             f"₦{self.amount}"
         )
+
+
+class LedgerEntry(models.Model):
+    """Double-entry ledger movement for an account caused by a Transaction."""
+
+    class EntryType(models.TextChoices):
+        DEBIT = "DEBIT", "Debit"
+        CREDIT = "CREDIT", "Credit"
+
+    account = models.ForeignKey(
+        "bank_accounts.Account",
+        on_delete=models.PROTECT,
+        related_name="ledger_entries",
+        verbose_name="Account",
+    )
+    transaction = models.ForeignKey(
+        Transaction,
+        on_delete=models.PROTECT,
+        related_name="ledger_entries",
+        verbose_name="Transaction",
+    )
+    entry_type = models.CharField(
+        max_length=6,
+        choices=EntryType.choices,
+        verbose_name="Entry type",
+    )
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Amount",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Timestamp",
+    )
+
+    class Meta:
+        verbose_name = "Ledger entry"
+        verbose_name_plural = "Ledger entries"
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(amount__gt=0),
+                name="ledger_entry_amount_positive",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.entry_type} ₦{self.amount} "
+            f"@ {self.account.account_number} "
+            f"({self.transaction.reference})"
+        )
+

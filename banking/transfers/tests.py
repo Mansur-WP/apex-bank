@@ -1,5 +1,4 @@
-"""
-transfers/tests.py — Transfer flow, validation, and money conservation tests.
+"""transfers/tests.py — Transfer flow, validation, and money conservation tests.
 """
 
 from decimal import Decimal
@@ -11,13 +10,20 @@ from django.urls import reverse
 
 from bank_accounts.models import Account
 
-from .selectors import TRANSACTIONS_PER_PAGE, TransactionFilters, get_transaction_page
+from .selectors import (
+    TRANSACTIONS_PER_PAGE,
+    TransactionFilters,
+    get_transaction_page,
+)
+
 from .services import (
     InsufficientFundsError,
     ReceiverNotFoundError,
     SelfTransferError,
+    TransferError,
     execute_transfer,
 )
+
 
 User = get_user_model()
 
@@ -90,6 +96,18 @@ class TransferServiceTests(TestCase):
         after = Account.objects.aggregate(total=Sum("balance"))["total"]
         self.assertEqual(before, after)
 
+    def test_frozen_user_cannot_transfer_money(self):
+        self.alice.is_frozen = True
+        self.alice.save(update_fields=["is_frozen"])
+
+        with self.assertRaises(TransferError) as ctx:
+            execute_transfer(
+                self.alice_account,
+                self.bob_account.account_number,
+                Decimal("10.00"),
+            )
+        self.assertIn("Frozen users cannot transfer money", str(ctx.exception))
+
 
 class TransferViewTests(TestCase):
     def setUp(self):
@@ -146,6 +164,18 @@ class TransferViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "recipient account not found")
 
+    def test_frozen_user_post_transfer_shows_error(self):
+        self.sender.is_frozen = True
+        self.sender.save(update_fields=["is_frozen"])
+        receiver_number = self.receiver.account.account_number
+
+        response = self.client.post(
+            reverse("transfer"),
+            {"to_account_number": receiver_number, "amount": "100.00"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Frozen accounts cannot transfer money")
+
 
 class TransactionHistoryPhase4Tests(TestCase):
     def setUp(self):
@@ -184,10 +214,7 @@ class TransactionHistoryPhase4Tests(TestCase):
             Decimal("50.00"),
         ).transaction
         content = self.client.get(reverse("history")).content.decode()
-        self.assertLess(
-            content.index(newer.reference),
-            content.index(self.txn.reference),
-        )
+        self.assertLess(content.index(newer.reference), content.index(self.txn.reference))
 
     def test_detail_page_for_own_transaction(self):
         url = reverse("transaction_detail", args=[self.txn.reference])
@@ -197,7 +224,7 @@ class TransactionHistoryPhase4Tests(TestCase):
         self.assertContains(response, "Outgoing")
 
     def test_cannot_view_other_users_transaction_detail(self):
-        """User with no role in the transfer gets 404 (not 403 — no information leak)."""
+        """User with no role in the transfer gets 404 (no information leak)."""
         charlie = User.objects.create_user(
             email="charlie@apex.test",
             password="SecurePass123!",
@@ -211,9 +238,7 @@ class TransactionHistoryPhase4Tests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_invalid_reference_returns_404(self):
-        response = self.client.get(
-            reverse("transaction_detail", args=["TXN-NOTREAL000000"])
-        )
+        response = self.client.get(reverse("transaction_detail", args=["TXN-NOTREAL000000"]))
         self.assertEqual(response.status_code, 404)
 
     def test_statement_page_requires_login(self):
@@ -363,7 +388,7 @@ class TransactionAnalysisPhase5Tests(TestCase):
         self.assertEqual(result.summary.total_count, 2)
 
     def test_pagination_limits_page_size(self):
-        for i in range(TRANSACTIONS_PER_PAGE + 3):
+        for _ in range(TRANSACTIONS_PER_PAGE + 3):
             execute_transfer(
                 self.alice.account,
                 self.bob.account.account_number,
@@ -389,3 +414,4 @@ class TransactionAnalysisPhase5Tests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["summary"].total_count, 0)
         self.assertContains(response, "No transactions in this period")
+

@@ -1,5 +1,5 @@
 {% extends "base_app.html" %}
-{% comment %}admin_dashboard.html — Staff-only overview with stats and chart{% endcomment %}
+{% comment %}admin_dashboard.html — Staff-only overview with stats, freeze/unfreeze actions, and chart{% endcomment %}
 
 {% block title %}Admin Dashboard — Apex Bank{% endblock %}
 {% block page_title %}Admin Dashboard{% endblock %}
@@ -68,6 +68,42 @@
 
 </div>
 
+<!-- Freeze / Unfreeze actions -->
+<div class="apex-card card-pad" style="margin-bottom:1.75rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:1rem;flex-wrap:wrap;">
+    <div>
+      <div style="font-size:1rem;font-weight:800;color:#0F172A;">Account Freezing</div>
+      <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.15rem;">
+        Freeze blocks transfers but does not disable login or read access.
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <form method="post" action="{% url 'freeze_account' %}">
+      {% csrf_token %}
+      <div>
+        <label class="form-label">Account number to freeze</label>
+        <input class="form-control" name="account_number" inputmode="numeric" maxlength="10" placeholder="10-digit account number" />
+      </div>
+      <button class="btn-blue" type="submit" style="margin-top:0.9rem;width:100%;">
+        <i class="bi bi-lock-fill"></i> Freeze Account
+      </button>
+    </form>
+
+    <form method="post" action="{% url 'unfreeze_account' %}">
+      {% csrf_token %}
+      <div>
+        <label class="form-label">Account number to unfreeze</label>
+        <input class="form-control" name="account_number" inputmode="numeric" maxlength="10" placeholder="10-digit account number" />
+      </div>
+      <button class="btn-ghost" type="submit" style="margin-top:0.9rem;width:100%;border-color:#10B981;color:#10B981;">
+        <i class="bi bi-unlock-fill"></i> Unfreeze Account
+      </button>
+    </form>
+  </div>
+</div>
+
 <!-- Chart -->
 <div class="apex-card card-pad" style="margin-bottom:1.75rem;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
@@ -98,7 +134,7 @@
           <th style="padding:0.75rem 1rem;text-align:left;font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;white-space:nowrap;">From</th>
           <th style="padding:0.75rem 1rem;text-align:left;font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;white-space:nowrap;">To</th>
           <th style="padding:0.75rem 1rem;text-align:right;font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;">Amount</th>
-          <th style="padding:0.75rem 1.25rem;text-align:right;font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;white-space:nowrap;">Date</th>
+          <th style="padding:0.75rem 1.25rem;text-align:right;font-size:0.7rem;color:#94A3B8;white-space:nowrap;">Date</th>
         </tr>
       </thead>
       <tbody>
@@ -149,7 +185,7 @@
         pointRadius: 5,
         pointHoverRadius: 7,
         fill: true,
-        tension: 0.4,
+        tension: 0.4
       }]
     },
     options: {
@@ -164,7 +200,7 @@
           padding: 12,
           cornerRadius: 8,
           callbacks: {
-            label: ctx => ` ${ctx.raw} transfer${ctx.raw !== 1 ? 's' : ''}`,
+            label: ctx => ` ${ctx.raw} transfer${ctx.raw !== 1 ? 's' : ''}`
           }
         }
       },
@@ -186,3 +222,4 @@
 })();
 </script>
 {% endblock %}
+

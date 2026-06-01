@@ -1,0 +1,89 @@
+{% extends "base_app.html" %}
+{% load l10n %}
+{% comment %}ledger_entries.html — Ledger entries (user or admin) table{% endcomment %}
+
+{% block title %}Ledger Entries — Apex Bank{% endblock %}
+{% block page_title %}Ledger Entries{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:1.5rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+  <div>
+    <h1 style="font-size:1.35rem;font-weight:800;color:#0F172A;margin-bottom:0.3rem;">Ledger Audit</h1>
+    <p style="font-size:0.875rem;color:#64748B;margin:0;">
+      {% if scope == 'admin' %}All double-entry movements across the platform.{% else %}Entries affecting your account.{% endif %}
+    </p>
+  </div>
+
+</div>
+
+{% if rows %}
+  <div class="apex-card" style="overflow:hidden;">
+    <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #F1F5F9;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:0.95rem;font-weight:700;color:#0F172A;">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }}</div>
+          <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.1rem;">out of {{ total_count }} entries</div>
+        </div>
+        {% if account %}
+          <div style="font-size:0.75rem;color:#94A3B8;">
+            Account: <span style="font-family:'Courier New',monospace;color:#334155;font-weight:700;">{{ account.account_number }}</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+        <thead>
+          <tr style="background:#F8FAFC;border-bottom:1px solid #E2E8F0;">
+            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;">Transaction Reference</th>
+            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;">Account</th>
+            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;">Entry Type</th>
+            <th style="padding:0.85rem 1rem;text-align:right;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;">Amount</th>
+            <th style="padding:0.85rem 1.25rem;text-align:right;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;">Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in rows %}
+            <tr style="border-bottom:1px solid #F1F5F9;">
+              <td style="padding:0.85rem 1rem;font-family:'Courier New',monospace;font-size:0.78rem;font-weight:600;">{{ entry.transaction.reference }}</td>
+              <td style="padding:0.85rem 1rem;font-family:'Courier New',monospace;font-size:0.8rem;color:#334155;font-weight:700;">{{ entry.account.account_number }}</td>
+              <td style="padding:0.85rem 1rem;">
+                <span class="{% if entry.entry_type == 'DEBIT' %}badge-sent{% else %}badge-success{% endif %}">
+                  {{ entry.entry_type }}
+                </span>
+              </td>
+              <td style="padding:0.85rem 1rem;text-align:right;font-weight:700;white-space:nowrap;color:#10B981;">
+                {% if entry.entry_type == 'DEBIT' %}-{% else %}+{% endif %}{% localize on %}₦{{ entry.amount|floatformat:2 }}{% endlocalize %}
+              </td>
+              <td style="padding:0.85rem 1.25rem;text-align:right;color:#64748B;font-size:0.78rem;white-space:nowrap;">
+                {{ entry.created_at|date:"M j, Y" }}<br /><span style="color:#94A3B8;">{{ entry.created_at|time:"g:i A" }}</span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if page_obj.has_other_pages %}
+    <div style="margin-top:1rem;">
+      {% include "transfers/_pagination.html" with page_obj=page_obj filter_query=filter_query %}
+    </div>
+  {% endif %}
+
+{% else %}
+  <div class="apex-card" style="padding:4rem 2rem;text-align:center;">
+    <div style="width:72px;height:72px;background:#F1F5F9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+      <i class="bi bi-file-earmark-text" style="font-size:1.75rem;color:#CBD5E1;"></i>
+    </div>
+    <div style="font-weight:700;color:#334155;margin-bottom:0.4rem;">No ledger entries found</div>
+    <div style="font-size:0.85rem;color:#94A3B8;margin-bottom:1.5rem;">
+      {% if scope == 'admin' %}No transactions have been recorded yet.{% else %}No transfers have affected your account yet.{% endif %}
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}
+

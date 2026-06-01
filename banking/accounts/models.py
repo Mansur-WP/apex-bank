@@ -68,7 +68,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=150, verbose_name="First name")
     last_name = models.CharField(max_length=150, verbose_name="Last name")
     is_active = models.BooleanField(default=True)
+    is_frozen = models.BooleanField(default=False, db_index=True, verbose_name="Frozen")
     is_staff = models.BooleanField(default=False)
+
     date_joined = models.DateTimeField(auto_now_add=True)
 
     objects = CustomUserManager()
