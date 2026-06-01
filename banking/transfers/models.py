@@ -7,6 +7,7 @@ Immutable audit record of every completed transfer.
 import uuid
 
 from django.db import models
+from django.db.models import Q
 
 
 def generate_reference():
@@ -54,11 +55,17 @@ class Transaction(models.Model):
         verbose_name = "Transaction"
         verbose_name_plural = "Transactions"
         ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(amount__gt=0),
+                name="transaction_amount_positive",
+            ),
+        ]
 
     def __str__(self):
         return (
             f"{self.reference} | "
             f"{self.sender_account.account_number} → "
             f"{self.receiver_account.account_number} | "
-            f"${self.amount}"
+            f"₦{self.amount}"
         )

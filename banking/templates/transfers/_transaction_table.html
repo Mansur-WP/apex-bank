@@ -1,0 +1,42 @@
+{% load l10n %}
+{% comment %}Transaction table — expects rows (list of TransactionRow){% endcomment %}
+<div class="apex-card" style="overflow:hidden;">
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+      <thead>
+        <tr style="background:#F8FAFC;border-bottom:1px solid #E2E8F0;">
+          <th style="padding:0.85rem 1rem;text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;">Reference</th>
+          <th style="padding:0.85rem 1rem;text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;">Sender</th>
+          <th style="padding:0.85rem 1rem;text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;">Receiver</th>
+          <th style="padding:0.85rem 1rem;text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;">Type</th>
+          <th style="padding:0.85rem 1rem;text-align:right;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;">Amount</th>
+          <th style="padding:0.85rem 1rem;text-align:right;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;">Date &amp; time</th>
+          <th style="padding:0.85rem 1rem;width:48px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr style="border-bottom:1px solid #F1F5F9;">
+          <td style="padding:0.85rem 1rem;font-family:'Courier New',monospace;font-size:0.78rem;font-weight:600;">
+            <a href="{% url 'transaction_detail' row.txn.reference %}" style="color:#1E40AF;text-decoration:none;">{{ row.txn.reference }}</a>
+          </td>
+          <td style="padding:0.85rem 1rem;font-family:'Courier New',monospace;font-size:0.8rem;color:#334155;">{{ row.txn.sender_account.account_number }}</td>
+          <td style="padding:0.85rem 1rem;font-family:'Courier New',monospace;font-size:0.8rem;color:#334155;">{{ row.txn.receiver_account.account_number }}</td>
+          <td style="padding:0.85rem 1rem;">
+            <span class="{% if row.is_outgoing %}badge-sent{% else %}badge-success{% endif %}">{{ row.transaction_type }}</span>
+          </td>
+          <td style="padding:0.85rem 1rem;text-align:right;font-weight:700;white-space:nowrap;" class="{% if row.is_outgoing %}txn-amt-sent{% else %}txn-amt-received{% endif %}">
+            {% if row.is_outgoing %}&minus;{% else %}&plus;{% endif %}{% localize on %}₦{{ row.txn.amount|floatformat:2 }}{% endlocalize %}
+          </td>
+          <td style="padding:0.85rem 1rem;text-align:right;color:#64748B;font-size:0.78rem;white-space:nowrap;">
+            {{ row.txn.created_at|date:"M j, Y" }}<br /><span style="color:#94A3B8;">{{ row.txn.created_at|time:"g:i A" }}</span>
+          </td>
+          <td style="padding:0.85rem 1rem;text-align:center;">
+            <a href="{% url 'transaction_detail' row.txn.reference %}" style="color:#94A3B8;"><i class="bi bi-chevron-right"></i></a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

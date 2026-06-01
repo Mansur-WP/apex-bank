@@ -34,50 +34,52 @@ SECRET_KEY = os.environ.get("SESSION_SECRET", "dev-fallback-key-change-in-prod")
 
 DEBUG = os.environ.get("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(",")
+
+# Local development on http://localhost (no HTTPS / no iframe).
+LOCAL_DEV = os.environ.get("LOCAL_DEV", "1" if DEBUG else "0") == "1"
 
 # Trust the X-Forwarded-Proto header set by Replit's HTTPS proxy so Django
 # knows the connection is HTTPS (required for correct CSRF origin checking).
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 
-# Build trusted origins from wildcard patterns plus any explicit domains
-# injected by the Replit environment (REPLIT_DOMAINS is comma-separated).
-_replit_domains = os.environ.get("REPLIT_DOMAINS", "")
-_extra_origins = [
-    f"https://{d.strip()}"
-    for d in _replit_domains.split(",")
-    if d.strip()
-]
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://*.replit.dev",
-    "https://*.repl.co",
-    "https://*.replit.app",
-] + _extra_origins
-
-# ── Cookie / CSRF policy for cross-origin iframe (Replit preview pane) ───────
+# CSRF trusted origins.
 #
-# Chrome 2024+ blocks ALL third-party cookies in cross-origin iframes —
-# including SameSite=None; Secure. Two fixes applied together:
-#
-#  1. CSRF_USE_SESSIONS — stores the CSRF token inside the server-side
-#     session instead of a dedicated csrftoken cookie. Eliminates the CSRF
-#     cookie entirely; only the session cookie needs to survive.
-#
-#  2. Session cookie with Partitioned (CHIPS) — the session cookie is stamped
-#     with SameSite=None; Secure; Partitioned by PartitionedCookiesMiddleware
-#     in banking_project/middleware.py. Partitioned cookies are stored per
-#     top-level site, which exempts them from third-party cookie blocking.
-#
-# Django 5.2's CSRF middleware source does NOT contain native Partitioned
-# support for the CSRF cookie; CSRF_USE_SESSIONS sidesteps that entirely.
+# Keep this list explicit to avoid CSRF 403s due to origin mismatch.
+# - LOCAL_DEV: allow localhost dev origins
+# - Non-local: require explicit origins via environment variable
+#   APP_CSRF_TRUSTED_ORIGINS (comma-separated, e.g. "https://example.com")
 
-CSRF_USE_SESSIONS = True          # CSRF token lives in the session, not a cookie
+APP_CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "APP_CSRF_TRUSTED_ORIGINS", ""
+).strip()
 
-SESSION_COOKIE_SAMESITE = "None"  # Required for cross-origin iframe access
-SESSION_COOKIE_SECURE = True      # Required when SameSite=None
-SESSION_COOKIE_PARTITIONED = True # Django 5.1+ — CHIPS; middleware also enforces
+if LOCAL_DEV:
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        o.strip()
+        for o in APP_CSRF_TRUSTED_ORIGINS.split(",")
+        if o.strip()
+    ]
+
+# Store CSRF token in the server-side session.
+CSRF_USE_SESSIONS = True
+
+
+
+if LOCAL_DEV:
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = False
+else:
+    # Default secure production cookies.
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = True
+
 
 # ---------------------------------------------------------------------------
 # Application definition
@@ -97,11 +99,7 @@ INSTALLED_APPS = [
     "transfers",
 ]
 
-MIDDLEWARE = [
-    # PartitionedCookiesMiddleware MUST come before SessionMiddleware.
-    # Django processes responses in reverse-list order, so listing it first
-    # ensures it runs last on responses — after Session has set its cookie.
-    "banking_project.middleware.PartitionedCookiesMiddleware",
+_MIDDLEWARE_BASE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -111,7 +109,12 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
+# Default Django middleware (no Replit/iframe-specific cookie middleware).
+MIDDLEWARE = _MIDDLEWARE_BASE
+
 ROOT_URLCONF = "banking_project.urls"
+
 
 TEMPLATES = [
     {
@@ -136,12 +139,21 @@ WSGI_APPLICATION = "banking_project.wsgi.application"
 # ---------------------------------------------------------------------------
 # Database — PostgreSQL via DATABASE_URL environment variable
 # ---------------------------------------------------------------------------
-DATABASES = {
-    "default": dj_database_url.config(
-        env="DATABASE_URL",
-        conn_max_age=600,
-    )
-}
+_database_url = os.environ.get("DATABASE_URL")
+if _database_url:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=_database_url,
+            conn_max_age=600,
+        )
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 # ---------------------------------------------------------------------------
 # Custom user model
@@ -175,6 +187,8 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
+USE_THOUSAND_SEPARATOR = True
+NUMBER_GROUPING = 3
 
 # ---------------------------------------------------------------------------
 # Static files

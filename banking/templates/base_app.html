@@ -378,8 +378,11 @@
     <a class="sidebar-link {% if request.resolver_match.url_name == 'transfer' %}active{% endif %}" href="{% url 'transfer' %}">
       <i class="bi bi-send-fill"></i> Send Money
     </a>
-    <a class="sidebar-link {% if request.resolver_match.url_name == 'history' %}active{% endif %}" href="{% url 'history' %}">
+    <a class="sidebar-link {% if request.resolver_match.url_name == 'history' or request.resolver_match.url_name == 'transaction_detail' %}active{% endif %}" href="{% url 'history' %}">
       <i class="bi bi-clock-history"></i> Transaction History
+    </a>
+    <a class="sidebar-link {% if request.resolver_match.url_name == 'statement' %}active{% endif %}" href="{% url 'statement' %}">
+      <i class="bi bi-file-text"></i> Account Statement
     </a>
     <a class="sidebar-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">
       <i class="bi bi-person-circle"></i> Profile

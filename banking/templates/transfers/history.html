@@ -1,184 +1,47 @@
 {% extends "base_app.html" %}
-{% comment %}history.html — Transaction history with search and filters{% endcomment %}
+{% load l10n %}
+{% comment %}history.html — Phase 5 transaction history with search, filters, pagination{% endcomment %}
 
 {% block title %}Transaction History — Apex Bank{% endblock %}
 {% block page_title %}Transaction History{% endblock %}
 
 {% block content %}
 
-<div style="margin-bottom:1.5rem;">
-  <h1 style="font-size:1.35rem;font-weight:800;color:#0F172A;margin-bottom:0.3rem;">Transaction History</h1>
-  <p style="font-size:0.875rem;color:#64748B;margin:0;">All your transfers — sent and received.</p>
-</div>
-
-<!-- Filters bar -->
-<div class="apex-card card-pad" style="margin-bottom:1.25rem;">
-  <form method="get" id="filterForm">
-    <div style="display:grid;grid-template-columns:1fr auto;gap:0.75rem;align-items:end;margin-bottom:1rem;">
-      <!-- Search -->
-      <div>
-        <label class="form-label">Search</label>
-        <div class="search-bar">
-          <i class="bi bi-search"></i>
-          <input type="text" name="q" class="form-control" placeholder="Reference, account, or note…" value="{{ search }}" />
-        </div>
-      </div>
-      <button type="submit" class="btn-blue" style="padding:0.65rem 1.25rem;white-space:nowrap;">
-        <i class="bi bi-search me-1"></i>Search
-      </button>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
-      <div>
-        <label class="form-label">From date</label>
-        <input type="date" name="date_from" class="form-control" value="{{ date_from }}" />
-      </div>
-      <div>
-        <label class="form-label">To date</label>
-        <input type="date" name="date_to" class="form-control" value="{{ date_to }}" />
-      </div>
-    </div>
-
-    <!-- Direction pills -->
-    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-      <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-right:0.25rem;">Filter:</span>
-      <a href="?q={{ search }}&date_from={{ date_from }}&date_to={{ date_to }}&direction=all" class="filter-pill {% if direction == 'all' %}active{% endif %}">
-        <i class="bi bi-list-ul"></i> All
-      </a>
-      <a href="?q={{ search }}&date_from={{ date_from }}&date_to={{ date_to }}&direction=received" class="filter-pill {% if direction == 'received' %}active{% endif %}">
-        <i class="bi bi-arrow-down-left"></i> Received
-      </a>
-      <a href="?q={{ search }}&date_from={{ date_from }}&date_to={{ date_to }}&direction=sent" class="filter-pill {% if direction == 'sent' %}active{% endif %}">
-        <i class="bi bi-arrow-up-right"></i> Sent
-      </a>
-    </div>
-  </form>
-</div>
-
-<!-- Results header -->
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-  <div style="font-size:0.78rem;color:#94A3B8;font-weight:500;">
-    {{ total_count }} transaction{{ total_count|pluralize }} found
+<div style="margin-bottom:1.5rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+  <div>
+    <h1 style="font-size:1.35rem;font-weight:800;color:#0F172A;margin-bottom:0.3rem;">Transaction History</h1>
+    <p style="font-size:0.875rem;color:#64748B;margin:0;">Search and analyse your transfers — newest first.</p>
   </div>
-  {% if search or direction != 'all' or date_from or date_to %}
-  <a href="{% url 'history' %}" style="font-size:0.78rem;color:#EF4444;font-weight:600;text-decoration:none;">
-    <i class="bi bi-x-circle me-1"></i>Clear filters
+  <a href="{% url 'statement' %}{% if filter_query %}?{{ filter_query }}{% endif %}" class="btn-ghost" style="text-decoration:none;padding:0.55rem 1rem;font-size:0.82rem;">
+    <i class="bi bi-file-text me-1"></i>Account statement
   </a>
+</div>
+
+{% include "transfers/_statement_summary.html" with summary=summary %}
+
+{% include "transfers/_transaction_filters.html" with filters=filters form_action="history" %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+  <div style="font-size:0.78rem;color:#94A3B8;">
+  {% if summary.total_count %}
+  Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ summary.total_count }} transaction{{ summary.total_count|pluralize }}
+  {% else %}
+  0 transactions
   {% endif %}
+  </div>
 </div>
 
-<!-- Transactions list -->
-{% if transactions %}
-<div class="apex-card">
-  {% for item in transactions %}
-  <div class="txn-item" data-bs-toggle="modal" data-bs-target="#txnModal{{ item.txn.pk }}" style="cursor:pointer;">
-    <div class="txn-icon {% if item.direction == 'sent' %}txn-icon-sent{% else %}txn-icon-received{% endif %}">
-      <i class="bi {% if item.direction == 'sent' %}bi-arrow-up-right{% else %}bi-arrow-down-left{% endif %}"></i>
-    </div>
-    <div class="txn-info">
-      <div class="txn-name">
-        {% if item.direction == 'sent' %}
-          <span style="color:#94A3B8;font-weight:500;font-size:0.75rem;">To</span>
-          {{ item.counterpart.user.get_full_name }}
-        {% else %}
-          <span style="color:#94A3B8;font-weight:500;font-size:0.75rem;">From</span>
-          {{ item.counterpart.user.get_full_name }}
-        {% endif %}
-      </div>
-      <div class="txn-ref">
-        {{ item.txn.reference }}
-        {% if item.txn.note %}<span style="color:#CBD5E1;margin:0 0.25rem;">·</span>{{ item.txn.note }}{% endif %}
-      </div>
-    </div>
-    <div style="text-align:right;flex-shrink:0;">
-      <div class="{% if item.direction == 'sent' %}txn-amt-sent{% else %}txn-amt-received{% endif %}">
-        {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}₦{{ item.txn.amount|floatformat:2 }}
-      </div>
-      <div class="txn-date">{{ item.txn.created_at|date:"M j, Y · g:i A" }}</div>
-      <div style="margin-top:0.15rem;">
-        <span class="{% if item.direction == 'sent' %}badge-sent{% else %}badge-success{% endif %}">
-          {% if item.direction == 'sent' %}Sent{% else %}Received{% endif %}
-        </span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Transaction detail modal -->
-  <div class="modal fade apex-modal" id="txnModal{{ item.txn.pk }}" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header border-0 pb-0 px-4 pt-4">
-          <div style="display:flex;align-items:center;gap:0.75rem;">
-            <div class="txn-icon {% if item.direction == 'sent' %}txn-icon-sent{% else %}txn-icon-received{% endif %}" style="width:48px;height:48px;">
-              <i class="bi {% if item.direction == 'sent' %}bi-arrow-up-right{% else %}bi-arrow-down-left{% endif %}"></i>
-            </div>
-            <div>
-              <div style="font-weight:700;font-size:1rem;color:#0F172A;">Transaction Details</div>
-              <span class="{% if item.direction == 'sent' %}badge-sent{% else %}badge-success{% endif %}">
-                {% if item.direction == 'sent' %}Sent{% else %}Received{% endif %}
-              </span>
-            </div>
-          </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body px-4 pb-4">
-          <div style="text-align:center;padding:1.25rem 0 1.5rem;">
-            <div style="font-size:2.25rem;font-weight:800;color:{% if item.direction == 'sent' %}#EF4444{% else %}#10B981{% endif %};">
-              {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}₦{{ item.txn.amount|floatformat:2 }}
-            </div>
-            <div style="font-size:0.78rem;color:#94A3B8;margin-top:0.25rem;">NGN · Completed</div>
-          </div>
-          <div class="modal-detail-row">
-            <span class="modal-detail-label">Reference ID</span>
-            <span class="modal-detail-value" style="font-family:'Courier New',monospace;font-size:0.78rem;">{{ item.txn.reference }}</span>
-          </div>
-          <div class="modal-detail-row">
-            <span class="modal-detail-label">Sender account</span>
-            <span class="modal-detail-value">
-              {{ item.txn.sender_account.account_number }}
-              {% if item.direction == 'sent' %}<span style="font-size:0.7rem;color:#94A3B8;">(you)</span>{% endif %}
-            </span>
-          </div>
-          <div class="modal-detail-row">
-            <span class="modal-detail-label">Receiver account</span>
-            <span class="modal-detail-value">
-              {{ item.txn.receiver_account.account_number }}
-              {% if item.direction == 'received' %}<span style="font-size:0.7rem;color:#94A3B8;">(you)</span>{% endif %}
-            </span>
-          </div>
-          <div class="modal-detail-row">
-            <span class="modal-detail-label">Date &amp; time</span>
-            <span class="modal-detail-value">{{ item.txn.created_at|date:"N j, Y · g:i:s A" }}</span>
-          </div>
-          {% if item.txn.note %}
-          <div class="modal-detail-row">
-            <span class="modal-detail-label">Note</span>
-            <span class="modal-detail-value">{{ item.txn.note }}</span>
-          </div>
-          {% endif %}
-          <div class="modal-detail-row">
-            <span class="modal-detail-label">Status</span>
-            <span class="modal-detail-value"><span class="badge-success">Completed</span></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endfor %}
-</div>
-
+{% if rows %}
+  {% include "transfers/_transaction_table.html" with rows=rows %}
+  {% include "transfers/_pagination.html" with page_obj=page_obj filter_query=filter_query %}
 {% else %}
 <div class="apex-card" style="padding:4rem 2rem;text-align:center;">
   <div style="width:72px;height:72px;background:#F1F5F9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
     <i class="bi bi-inbox" style="font-size:1.75rem;color:#CBD5E1;"></i>
   </div>
-  <div style="font-weight:700;font-size:1rem;color:#334155;margin-bottom:0.4rem;">No transactions found</div>
+  <div style="font-weight:700;color:#334155;margin-bottom:0.4rem;">No transactions found</div>
   <div style="font-size:0.85rem;color:#94A3B8;margin-bottom:1.5rem;">
-    {% if search or direction != 'all' or date_from or date_to %}
-      Try adjusting your filters.
-    {% else %}
-      You haven't made any transfers yet.
-    {% endif %}
+    {% if filters.has_active_filters %}Try adjusting your search or filters.{% else %}You haven't made any transfers yet.{% endif %}
   </div>
   <a href="{% url 'transfer' %}" class="btn-blue" style="text-decoration:none;padding:0.6rem 1.5rem;font-size:0.875rem;">
     <i class="bi bi-send me-1"></i>Send your first transfer

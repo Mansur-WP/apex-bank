@@ -39,11 +39,16 @@ if "partitioned" not in Morsel._flags:
     Morsel._flags.add("partitioned")
 
 
-class PartitionedCookiesMiddleware:
-    """Stamp SameSite=None; Secure; Partitioned onto the session cookie.
+# This middleware is intentionally left blank to remove Replit/iframe
+# coupling from the codebase. It should not be enabled in settings.
 
-    Must be listed BEFORE SessionMiddleware in settings.MIDDLEWARE.
+class PartitionedCookiesMiddleware:
+    """(deprecated) Previously stamped session cookie with Partitioned.
+
+    This file is retained only for reference; it is intentionally not used
+    by the app (it is not enabled in MIDDLEWARE).
     """
+
 
     def __init__(self, get_response):
         self.get_response = get_response

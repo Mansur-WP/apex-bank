@@ -19,7 +19,7 @@ class TransferForm(forms.Form):
         }),
     )
     amount = forms.DecimalField(
-        label="Amount (USD)",
+        label="Amount (NGN)",
         max_digits=12,
         decimal_places=2,
         widget=forms.NumberInput(attrs={
@@ -30,7 +30,7 @@ class TransferForm(forms.Form):
         }),
     )
     note = forms.CharField(
-        label="Note (optional)",
+        label="Narration (optional)",
         max_length=200,
         required=False,
         widget=forms.TextInput(attrs={

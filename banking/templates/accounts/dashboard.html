@@ -1,4 +1,5 @@
 {% extends "base_app.html" %}
+{% load l10n %}
 {% comment %}dashboard.html — Apex Bank main dashboard{% endcomment %}
 
 {% block title %}Dashboard — Apex Bank{% endblock %}
@@ -29,7 +30,7 @@
       </div>
     </div>
     <div style="font-size:2.25rem;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:0.25rem;">
-      ₦{{ account.balance|floatformat:2 }}
+      {% localize on %}₦{{ account.balance|floatformat:2 }}{% endlocalize %}
     </div>
     <div style="font-size:0.78rem;color:rgba(255,255,255,0.55);">Available to spend</div>
   </div>
@@ -90,81 +91,27 @@
   </div>
 
   {% if recent_transactions %}
-    {% for item in recent_transactions %}
-    <div class="txn-item" data-bs-toggle="modal" data-bs-target="#txnModal{{ item.txn.pk }}">
-      <div class="txn-icon {% if item.direction == 'sent' %}txn-icon-sent{% else %}txn-icon-received{% endif %}">
-        <i class="bi {% if item.direction == 'sent' %}bi-arrow-up-right{% else %}bi-arrow-down-left{% endif %}"></i>
+    {% for row in recent_transactions %}
+    <a href="{% url 'transaction_detail' row.txn.reference %}" class="txn-item" style="text-decoration:none;color:inherit;cursor:pointer;">
+      <div class="txn-icon {% if row.is_outgoing %}txn-icon-sent{% else %}txn-icon-received{% endif %}">
+        <i class="bi {% if row.is_outgoing %}bi-arrow-up-right{% else %}bi-arrow-down-left{% endif %}"></i>
       </div>
       <div class="txn-info">
         <div class="txn-name">
-          {% if item.direction == 'sent' %}To: {% else %}From: {% endif %}
-          {{ item.counterpart.user.get_full_name }}
+          <span class="{% if row.is_outgoing %}badge-sent{% else %}badge-success{% endif %}" style="margin-right:0.35rem;">{{ row.transaction_type }}</span>
+          {{ row.txn.reference }}
         </div>
-        <div class="txn-ref">{{ item.txn.reference }}{% if item.txn.note %} · {{ item.txn.note }}{% endif %}</div>
+        <div class="txn-ref" style="font-family:'Courier New',monospace;font-size:0.72rem;">
+          {{ row.txn.sender_account.account_number }} → {{ row.txn.receiver_account.account_number }}
+        </div>
       </div>
       <div style="text-align:right;">
-        <div class="{% if item.direction == 'sent' %}txn-amt-sent{% else %}txn-amt-received{% endif %}">
-          {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}₦{{ item.txn.amount|floatformat:2 }}
+        <div class="{% if row.is_outgoing %}txn-amt-sent{% else %}txn-amt-received{% endif %}">
+          {% if row.is_outgoing %}&minus;{% else %}&plus;{% endif %}{% localize on %}₦{{ row.txn.amount|floatformat:2 }}{% endlocalize %}
         </div>
-        <div class="txn-date">{{ item.txn.created_at|date:"M j, g:i A" }}</div>
+        <div class="txn-date">{{ row.txn.created_at|date:"M j, g:i A" }}</div>
       </div>
-    </div>
-
-    <!-- Transaction detail modal -->
-    <div class="modal fade apex-modal" id="txnModal{{ item.txn.pk }}" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header border-0 pb-0">
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-              <div class="txn-icon {% if item.direction == 'sent' %}txn-icon-sent{% else %}txn-icon-received{% endif %}" style="width:48px;height:48px;">
-                <i class="bi {% if item.direction == 'sent' %}bi-arrow-up-right{% else %}bi-arrow-down-left{% endif %}"></i>
-              </div>
-              <div>
-                <div style="font-weight:700;font-size:1rem;color:#0F172A;">Transaction Details</div>
-                <div class="{% if item.direction == 'sent' %}badge-sent{% else %}badge-success{% endif %}">
-                  {% if item.direction == 'sent' %}Sent{% else %}Received{% endif %}
-                </div>
-              </div>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body px-4 pb-4">
-            <div style="text-align:center;padding:1rem 0 1.5rem;">
-              <div style="font-size:2rem;font-weight:800;color:{% if item.direction == 'sent' %}#EF4444{% else %}#10B981{% endif %};">
-                {% if item.direction == 'sent' %}&minus;{% else %}&plus;{% endif %}₦{{ item.txn.amount|floatformat:2 }}
-              </div>
-              <div style="font-size:0.78rem;color:#94A3B8;margin-top:0.25rem;">NGN</div>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Reference ID</span>
-              <span class="modal-detail-value" style="font-family:'Courier New',monospace;font-size:0.78rem;">{{ item.txn.reference }}</span>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">From account</span>
-              <span class="modal-detail-value">{{ item.txn.sender_account.account_number }}</span>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">To account</span>
-              <span class="modal-detail-value">{{ item.txn.receiver_account.account_number }}</span>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Date &amp; time</span>
-              <span class="modal-detail-value">{{ item.txn.created_at|date:"N j, Y · g:i A" }}</span>
-            </div>
-            {% if item.txn.note %}
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Note</span>
-              <span class="modal-detail-value">{{ item.txn.note }}</span>
-            </div>
-            {% endif %}
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Status</span>
-              <span class="modal-detail-value"><span class="badge-success">Completed</span></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </a>
     {% endfor %}
   {% else %}
     <div style="padding:3rem;text-align:center;">

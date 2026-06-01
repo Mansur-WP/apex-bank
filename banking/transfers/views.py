@@ -1,20 +1,83 @@
 """
-transfers/views.py — Transfer and history views for Phase 3.
+transfers/views.py — Transfers, history, statement, and transaction detail views.
 """
 
-from datetime import datetime
-from decimal import Decimal
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views import View
 
-from bank_accounts.models import Account
-
 from .forms import TransferForm
-from .models import Transaction
+from .selectors import (
+    TransactionFilters,
+    get_recent_transactions,
+    get_transaction_for_account,
+    get_transaction_page,
+    statement_period_label,
+    verify_recipient_account,
+)
+from .services import (
+    InsufficientFundsError,
+    ReceiverNotFoundError,
+    SelfTransferError,
+    TransferError,
+    execute_transfer,
+)
+
+
+def _get_user_account(user):
+    """Return the logged-in user's bank account or None."""
+    try:
+        return user.account
+    except ObjectDoesNotExist:
+        return None
+
+
+def _filters_query_string(filters: TransactionFilters) -> str:
+    return urlencode(filters.query_dict())
+
+
+def _transaction_list_context(account, request, result):
+    """Shared template context for history and statement views."""
+    return {
+        "account": account,
+        "rows": result.rows,
+        "page_obj": result.page_obj,
+        "summary": result.summary,
+        "filters": result.filters,
+        "filter_query": _filters_query_string(result.filters),
+        "period_label": statement_period_label(
+            result.filters.date_from,
+            result.filters.date_to,
+        ),
+    }
+
+
+class VerifyRecipientView(LoginRequiredMixin, View):
+    """
+    JSON endpoint: verify recipient account number before transfer.
+
+    GET /transfers/verify/?account_number=1234567890
+  """
+
+    login_url = "/accounts/login/"
+
+    def get(self, request):
+        sender_account = _get_user_account(request.user)
+        if sender_account is None:
+            return JsonResponse(
+                {"status": "error", "message": "No bank account linked to your profile."},
+                status=400,
+            )
+
+        account_number = request.GET.get("account_number", "")
+        result = verify_recipient_account(account_number, sender_account)
+        status_code = 200 if result.status == "found" else 200
+        return JsonResponse(result.to_dict(), status=status_code)
 
 
 class TransferView(LoginRequiredMixin, View):
@@ -22,16 +85,32 @@ class TransferView(LoginRequiredMixin, View):
     template_name = "transfers/transfer.html"
 
     def get(self, request):
+        account = _get_user_account(request.user)
+        if account is None:
+            messages.error(
+                request,
+                "No bank account is linked to your profile. Please contact support.",
+            )
+            return redirect("dashboard")
+
         return render(request, self.template_name, {
             "form": TransferForm(),
-            "account": request.user.account,
+            "account": account,
         })
 
     def post(self, request):
         form = TransferForm(request.POST)
-        sender_account = request.user.account
+        sender_account = _get_user_account(request.user)
+
+        if sender_account is None:
+            messages.error(
+                request,
+                "No bank account is linked to your profile. Please contact support.",
+            )
+            return redirect("dashboard")
 
         if not form.is_valid():
+            messages.error(request, "Please correct the errors below and try again.")
             return render(request, self.template_name, {
                 "form": form,
                 "account": sender_account,
@@ -41,125 +120,123 @@ class TransferView(LoginRequiredMixin, View):
         amount = form.cleaned_data["amount"]
         note = form.cleaned_data.get("note", "")
 
-        # Business rule 1: receiver must exist
         try:
-            receiver_account = Account.objects.get(account_number=to_account_number)
-        except Account.DoesNotExist:
+            result = execute_transfer(
+                sender_account,
+                to_account_number,
+                amount,
+                note=note,
+            )
+        except ReceiverNotFoundError:
             form.add_error("to_account_number", "No account found with that number.")
+            messages.error(request, "Transfer failed: recipient account not found.")
+            return render(request, self.template_name, {
+                "form": form,
+                "account": sender_account,
+            })
+        except SelfTransferError:
+            form.add_error(
+                "to_account_number",
+                "You cannot transfer money to your own account.",
+            )
+            messages.error(request, "Transfer failed: you cannot send money to yourself.")
+            return render(request, self.template_name, {
+                "form": form,
+                "account": sender_account,
+            })
+        except InsufficientFundsError as exc:
+            form.add_error(
+                "amount",
+                f"Insufficient funds. Available balance: ₦{exc.available:,.2f}.",
+            )
+            messages.error(
+                request,
+                f"Transfer failed: insufficient funds (available ₦{exc.available:,.2f}).",
+            )
+            return render(request, self.template_name, {
+                "form": form,
+                "account": sender_account,
+            })
+        except TransferError as exc:
+            messages.error(request, f"Transfer failed: {exc}")
             return render(request, self.template_name, {
                 "form": form,
                 "account": sender_account,
             })
 
-        # Business rule 2: cannot send to yourself
-        if receiver_account.pk == sender_account.pk:
-            form.add_error("to_account_number", "You cannot transfer money to your own account.")
-            return render(request, self.template_name, {
-                "form": form,
-                "account": sender_account,
-            })
-
-        insufficient = False
-        try:
-            with transaction.atomic():
-                locked = Account.objects.select_for_update().filter(
-                    pk__in=[sender_account.pk, receiver_account.pk]
-                )
-                locked_sender   = locked.get(pk=sender_account.pk)
-                locked_receiver = locked.get(pk=receiver_account.pk)
-
-                # Business rule 3: sufficient balance
-                if locked_sender.balance - amount < Decimal("0.00"):
-                    insufficient = True
-                    raise ValueError("insufficient_funds")
-
-                locked_sender.balance   -= amount
-                locked_receiver.balance += amount
-                locked_sender.save(update_fields=["balance", "updated_at"])
-                locked_receiver.save(update_fields=["balance", "updated_at"])
-
-                txn = Transaction.objects.create(
-                    sender_account=locked_sender,
-                    receiver_account=locked_receiver,
-                    amount=amount,
-                    note=note,
-                )
-
-        except ValueError:
-            if insufficient:
-                form.add_error(
-                    "amount",
-                    f"Insufficient funds. Available balance: ${sender_account.balance:,.2f}.",
-                )
-                return render(request, self.template_name, {
-                    "form": form,
-                    "account": sender_account,
-                })
-            raise
-
+        txn = result.transaction
         messages.success(
             request,
-            f"Transfer of ${amount:,.2f} sent successfully. Reference: {txn.reference}",
+            f"Transfer of ₦{amount:,.2f} sent successfully. Reference: {txn.reference}",
         )
         return redirect("dashboard")
 
 
 class TransactionHistoryView(LoginRequiredMixin, View):
+    """Phase 5: searchable, filterable, paginated transaction history."""
+
     login_url = "/accounts/login/"
     template_name = "transfers/history.html"
 
     def get(self, request):
-        account = request.user.account
-        direction = request.GET.get("direction", "all")
-        search    = request.GET.get("q", "").strip()
-        date_from = request.GET.get("date_from", "")
-        date_to   = request.GET.get("date_to", "")
+        account = _get_user_account(request.user)
+        if account is None:
+            messages.error(request, "No bank account found for your profile.")
+            return redirect("dashboard")
 
-        if direction == "sent":
-            sent_qs     = account.sent_transactions.select_related("receiver_account__user")
-            received_qs = []
-        elif direction == "received":
-            sent_qs     = []
-            received_qs = account.received_transactions.select_related("sender_account__user")
-        else:
-            sent_qs     = account.sent_transactions.select_related("receiver_account__user")
-            received_qs = account.received_transactions.select_related("sender_account__user")
+        filters = TransactionFilters.from_request(request)
+        page_number = request.GET.get("page", 1)
+        result = get_transaction_page(account, filters, page_number=page_number)
 
-        txns = sorted(
-            [{"txn": t, "direction": "sent",     "counterpart": t.receiver_account} for t in sent_qs] +
-            [{"txn": t, "direction": "received",  "counterpart": t.sender_account}   for t in received_qs],
-            key=lambda x: x["txn"].created_at,
-            reverse=True,
+        return render(
+            request,
+            self.template_name,
+            _transaction_list_context(account, request, result),
         )
 
-        if search:
-            txns = [
-                t for t in txns
-                if search.lower() in t["txn"].reference.lower()
-                or search in t["counterpart"].account_number
-                or (t["txn"].note and search.lower() in t["txn"].note.lower())
-            ]
 
-        if date_from:
-            try:
-                df = datetime.strptime(date_from, "%Y-%m-%d").date()
-                txns = [t for t in txns if t["txn"].created_at.date() >= df]
-            except ValueError:
-                pass
+class AccountStatementView(LoginRequiredMixin, View):
+    """Phase 5: account statement with summary statistics and paginated table."""
 
-        if date_to:
-            try:
-                dt = datetime.strptime(date_to, "%Y-%m-%d").date()
-                txns = [t for t in txns if t["txn"].created_at.date() <= dt]
-            except ValueError:
-                pass
+    login_url = "/accounts/login/"
+    template_name = "transfers/statement.html"
+
+    def get(self, request):
+        account = _get_user_account(request.user)
+        if account is None:
+            messages.error(request, "No bank account found for your profile.")
+            return redirect("dashboard")
+
+        filters = TransactionFilters.from_request(request)
+        page_number = request.GET.get("page", 1)
+        result = get_transaction_page(account, filters, page_number=page_number)
+
+        return render(
+            request,
+            self.template_name,
+            _transaction_list_context(account, request, result),
+        )
+
+
+class TransactionDetailView(LoginRequiredMixin, View):
+    """
+    Phase 4: dedicated transaction detail page.
+
+    Ownership is enforced in get_transaction_for_account — other users get 404.
+    """
+
+    login_url = "/accounts/login/"
+    template_name = "transfers/transaction_detail.html"
+
+    def get(self, request, reference):
+        account = _get_user_account(request.user)
+        if account is None:
+            messages.error(request, "No bank account found for your profile.")
+            return redirect("dashboard")
+
+        row = get_transaction_for_account(account, reference)
 
         return render(request, self.template_name, {
-            "transactions": txns,
+            "row": row,
             "account": account,
-            "direction": direction,
-            "search": search,
-            "date_from": date_from,
-            "date_to": date_to,
-            "total_count": len(txns),
         })

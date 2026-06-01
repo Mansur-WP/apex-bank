@@ -44,7 +44,7 @@ class RegistrationForm(forms.ModelForm):
         label="Confirm password",
         widget=forms.PasswordInput(attrs={
             "class": "form-control",
-            "placeholder": "Repeat the password",
+            "placeholder": "Re-enter the password",
         }),
     )
 

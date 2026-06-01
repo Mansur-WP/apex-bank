@@ -1,0 +1,23 @@
+{% load l10n %}
+{% comment %}Summary stat cards — expects summary (StatementSummary){% endcomment %}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.25rem;">
+  <div class="apex-card card-pad" style="text-align:center;">
+    <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.35rem;">Current balance</div>
+    <div style="font-size:1.25rem;font-weight:800;color:#1E40AF;">{% localize on %}₦{{ summary.current_balance|floatformat:2 }}{% endlocalize %}</div>
+  </div>
+  <div class="apex-card card-pad" style="text-align:center;">
+    <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.35rem;">Total sent</div>
+    <div style="font-size:1.25rem;font-weight:800;color:#EF4444;">{% localize on %}₦{{ summary.total_sent|floatformat:2 }}{% endlocalize %}</div>
+    <div style="font-size:0.72rem;color:#94A3B8;margin-top:0.2rem;">{{ summary.outgoing_count }} outgoing</div>
+  </div>
+  <div class="apex-card card-pad" style="text-align:center;">
+    <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.35rem;">Total received</div>
+    <div style="font-size:1.25rem;font-weight:800;color:#10B981;">{% localize on %}₦{{ summary.total_received|floatformat:2 }}{% endlocalize %}</div>
+    <div style="font-size:0.72rem;color:#94A3B8;margin-top:0.2rem;">{{ summary.incoming_count }} incoming</div>
+  </div>
+  <div class="apex-card card-pad" style="text-align:center;">
+    <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.35rem;">Transactions</div>
+    <div style="font-size:1.25rem;font-weight:800;color:#0F172A;">{{ summary.total_count }}</div>
+    <div style="font-size:0.72rem;color:#94A3B8;margin-top:0.2rem;">in this view</div>
+  </div>
+</div>

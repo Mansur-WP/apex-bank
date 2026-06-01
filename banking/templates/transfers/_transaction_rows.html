@@ -1,0 +1,36 @@
+{% load l10n %}
+{% comment %}
+  Shared transaction list rows — history, statement, dashboard.
+  Expects: rows (list of TransactionRow), show_link (bool, default true)
+{% endcomment %}
+
+{% for row in rows %}
+<a href="{% if show_link|default:True %}{% url 'transaction_detail' row.txn.reference %}{% else %}#{% endif %}"
+   class="txn-item" style="text-decoration:none;color:inherit;{% if show_link|default:True %}cursor:pointer;{% endif %}">
+  <div class="txn-icon {% if row.is_outgoing %}txn-icon-sent{% else %}txn-icon-received{% endif %}">
+    <i class="bi {% if row.is_outgoing %}bi-arrow-up-right{% else %}bi-arrow-down-left{% endif %}"></i>
+  </div>
+  <div class="txn-info" style="min-width:0;">
+    <div class="txn-name" style="font-family:'Courier New',monospace;font-size:0.72rem;color:#64748B;margin-bottom:0.15rem;">
+      {{ row.txn.reference }}
+    </div>
+    <div style="font-size:0.78rem;color:#475569;margin-bottom:0.2rem;">
+      <span style="color:#94A3B8;">From</span> {{ row.txn.sender_account.account_number }}
+      <span style="color:#CBD5E1;margin:0 0.25rem;">→</span>
+      <span style="color:#94A3B8;">To</span> {{ row.txn.receiver_account.account_number }}
+    </div>
+    {% if row.txn.note %}
+    <div class="txn-ref">{{ row.txn.note }}</div>
+    {% endif %}
+  </div>
+  <div style="text-align:right;flex-shrink:0;">
+    <span class="{% if row.is_outgoing %}badge-sent{% else %}badge-success{% endif %}" style="margin-bottom:0.35rem;display:inline-block;">
+      {{ row.transaction_type }}
+    </span>
+    <div class="{% if row.is_outgoing %}txn-amt-sent{% else %}txn-amt-received{% endif %}">
+      {% if row.is_outgoing %}&minus;{% else %}&plus;{% endif %}{% localize on %}₦{{ row.txn.amount|floatformat:2 }}{% endlocalize %}
+    </div>
+    <div class="txn-date">{{ row.txn.created_at|date:"M j, Y · g:i A" }}</div>
+  </div>
+</a>
+{% endfor %}

@@ -1,5 +1,6 @@
 {% extends "base_app.html" %}
-{% comment %}transfer.html — Send money form{% endcomment %}
+{% load l10n %}
+{% comment %}transfer.html — Send money with recipient verification{% endcomment %}
 
 {% block title %}Send Money — Apex Bank{% endblock %}
 {% block page_title %}Send Money{% endblock %}
@@ -8,7 +9,6 @@
 
 <div style="max-width:680px;margin:0 auto;">
 
-  <!-- Page header -->
   <div style="margin-bottom:1.75rem;">
     <h1 style="font-size:1.35rem;font-weight:800;color:#0F172A;margin-bottom:0.3rem;">Send Money</h1>
     <p style="font-size:0.875rem;color:#64748B;margin:0;">Transfer funds instantly to any Apex account.</p>
@@ -16,7 +16,6 @@
 
   <div style="display:grid;grid-template-columns:1fr;gap:1.25rem;">
 
-    <!-- Your account summary -->
     {% if account %}
     <div class="apex-card balance-card card-pad" style="position:relative;overflow:hidden;">
       <div style="position:absolute;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.05);top:-30px;right:-30px;"></div>
@@ -29,32 +28,39 @@
         </div>
         <div style="text-align:right;">
           <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:0.3rem;">Available Balance</div>
-          <div style="font-size:1.35rem;font-weight:800;color:#fff;">₦{{ account.balance|floatformat:2 }}</div>
+          <div style="font-size:1.35rem;font-weight:800;color:#fff;">{% localize on %}₦{{ account.balance|floatformat:2 }}{% endlocalize %}</div>
         </div>
       </div>
     </div>
     {% endif %}
 
-    <!-- Transfer form -->
     <div class="apex-card card-pad">
       <form method="post" novalidate id="transferForm">
         {% csrf_token %}
 
         <!-- Recipient -->
-        <div style="margin-bottom:1.25rem;">
+        <div style="margin-bottom:1rem;">
           <label for="{{ form.to_account_number.id_for_label }}" class="form-label">
             <i class="bi bi-person-fill me-1" style="color:#1E40AF;"></i>Recipient Account Number
           </label>
-          {{ form.to_account_number }}
+          <div style="display:flex;gap:0.5rem;align-items:flex-start;">
+            {{ form.to_account_number }}
+            <button type="button" id="verifyRecipientBtn" class="btn-blue" style="padding:0.65rem 1rem;white-space:nowrap;flex-shrink:0;">
+              <i class="bi bi-patch-check me-1"></i>Verify
+            </button>
+          </div>
           {% if form.to_account_number.errors %}
             {% for e in form.to_account_number.errors %}
               <div class="field-error"><i class="bi bi-exclamation-circle"></i>{{ e }}</div>
             {% endfor %}
           {% endif %}
           <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.35rem;">
-            Enter the exact 10-digit account number of the recipient.
+            Enter the 10-digit number, then tap <strong>Verify</strong> to confirm the account holder.
           </div>
         </div>
+
+        <!-- Verification panel (filled by JS) -->
+        <div id="recipientVerifyPanel" style="display:none;margin-bottom:1.25rem;"></div>
 
         <!-- Amount -->
         <div style="margin-bottom:1.25rem;">
@@ -66,7 +72,7 @@
             <input type="number" name="{{ form.amount.html_name }}" id="{{ form.amount.id_for_label }}"
               class="form-control" placeholder="0.00" step="0.01" min="0.01"
               style="padding-left:1.9rem;"
-              value="{{ form.amount.value|default:'' }}" />
+              value="{{ form.amount.value|default:'' }}" disabled />
           </div>
           {% if form.amount.errors %}
             {% for e in form.amount.errors %}
@@ -88,21 +94,19 @@
           {% endif %}
         </div>
 
-        <!-- Warning -->
         <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:0.65rem;padding:0.8rem 1rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:0.6rem;">
           <i class="bi bi-shield-exclamation" style="color:#D97706;margin-top:0.1rem;flex-shrink:0;"></i>
           <span style="font-size:0.8rem;color:#92400E;line-height:1.5;">
-            Double-check the account number. Transfers on Apex are instant and <strong>cannot be reversed</strong>.
+            Verify the recipient before sending. Apex transfers are instant and <strong>cannot be reversed</strong>.
           </span>
         </div>
 
-        <button type="submit" class="btn-blue w-100" style="padding:0.8rem;font-size:0.95rem;">
+        <button type="submit" id="confirmTransferBtn" class="btn-blue w-100" style="padding:0.8rem;font-size:0.95rem;" disabled>
           <i class="bi bi-send-fill me-2"></i>Confirm Transfer
         </button>
       </form>
     </div>
 
-    <!-- How transfers work -->
     <div class="apex-card card-pad" style="background:#F8FAFC;">
       <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.85rem;">How it works</div>
       <div style="display:flex;flex-direction:column;gap:0.75rem;">
@@ -116,18 +120,156 @@
           <div style="width:28px;height:28px;border-radius:50%;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
             <span style="font-size:0.7rem;font-weight:800;color:#1E40AF;">2</span>
           </div>
-          <span style="font-size:0.82rem;color:#475569;">Enter the amount and an optional note</span>
+          <span style="font-size:0.82rem;color:#475569;">Tap <strong>Verify</strong> — confirm account name and bank</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.75rem;">
           <div style="width:28px;height:28px;border-radius:50%;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
             <span style="font-size:0.7rem;font-weight:800;color:#1E40AF;">3</span>
           </div>
-          <span style="font-size:0.82rem;color:#475569;">Confirm — funds move instantly and atomically</span>
+          <span style="font-size:0.82rem;color:#475569;">Enter amount, then confirm the transfer</span>
         </div>
       </div>
     </div>
 
   </div>
 </div>
+
+<script>
+(function () {
+  const verifyUrl = "{% url 'verify_recipient' %}";
+  const accountInput = document.getElementById("{{ form.to_account_number.id_for_label }}");
+  const verifyBtn = document.getElementById("verifyRecipientBtn");
+  const panel = document.getElementById("recipientVerifyPanel");
+  const amountInput = document.getElementById("{{ form.amount.id_for_label }}");
+  const confirmBtn = document.getElementById("confirmTransferBtn");
+  let lastVerifiedNumber = null;
+
+  function getCsrfToken() {
+    const el = document.querySelector("[name=csrfmiddlewaretoken]");
+    return el ? el.value : "";
+  }
+
+  function resetVerification() {
+    lastVerifiedNumber = null;
+    panel.style.display = "none";
+    panel.innerHTML = "";
+    amountInput.disabled = true;
+    confirmBtn.disabled = true;
+  }
+
+  function renderPanel(html) {
+    panel.innerHTML = html;
+    panel.style.display = "block";
+  }
+
+  function successCard(data) {
+    return `
+      <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:0.75rem;padding:1rem 1.15rem;">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.85rem;">
+          <div style="width:36px;height:36px;background:#10B981;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+            <i class="bi bi-patch-check-fill" style="color:#fff;font-size:1.1rem;"></i>
+          </div>
+          <div>
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#059669;">Account verified</div>
+            <div style="font-size:0.8rem;color:#047857;">${data.message}</div>
+          </div>
+        </div>
+        <div style="display:grid;gap:0.55rem;">
+          <div style="display:flex;justify-content:space-between;gap:1rem;">
+            <span style="font-size:0.78rem;color:#64748B;">Account holder</span>
+            <span style="font-size:0.875rem;font-weight:700;color:#0F172A;text-align:right;">${data.account_holder}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:1rem;">
+            <span style="font-size:0.78rem;color:#64748B;">Bank</span>
+            <span style="font-size:0.875rem;font-weight:600;color:#0F172A;text-align:right;">${data.bank_name}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:1rem;">
+            <span style="font-size:0.78rem;color:#64748B;">Account number</span>
+            <span style="font-family:'Courier New',monospace;font-size:0.85rem;font-weight:600;color:#0F172A;">${data.account_number}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function errorCard(message, icon) {
+    return `
+      <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:0.75rem;padding:1rem 1.15rem;display:flex;align-items:flex-start;gap:0.65rem;">
+        <i class="bi ${icon}" style="color:#EF4444;font-size:1.15rem;margin-top:0.1rem;"></i>
+        <div>
+          <div style="font-size:0.78rem;font-weight:700;color:#991B1B;margin-bottom:0.2rem;">Verification failed</div>
+          <div style="font-size:0.82rem;color:#B91C1C;line-height:1.45;">${message}</div>
+        </div>
+      </div>`;
+  }
+
+  function loadingCard() {
+    return `
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:0.75rem;padding:1rem;text-align:center;color:#64748B;font-size:0.85rem;">
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span> Verifying account…
+      </div>`;
+  }
+
+  async function verifyRecipient() {
+    const number = (accountInput.value || "").trim();
+    resetVerification();
+
+    if (number.length !== 10) {
+      renderPanel(errorCard("Enter a complete 10-digit account number before verifying.", "bi-exclamation-circle"));
+      return;
+    }
+
+    renderPanel(loadingCard());
+    verifyBtn.disabled = true;
+
+    try {
+      const res = await fetch(`${verifyUrl}?account_number=${encodeURIComponent(number)}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        credentials: "same-origin",
+      });
+      const data = await res.json();
+
+      if (data.status === "found" && data.verified) {
+        lastVerifiedNumber = number;
+        renderPanel(successCard(data));
+        amountInput.disabled = false;
+        confirmBtn.disabled = false;
+        amountInput.focus();
+      } else if (data.status === "self") {
+        renderPanel(errorCard(data.message, "bi-person-x"));
+      } else if (data.status === "not_found") {
+        renderPanel(errorCard(data.message, "bi-search"));
+      } else {
+        renderPanel(errorCard(data.message || "Could not verify this account.", "bi-exclamation-triangle"));
+      }
+    } catch (err) {
+      renderPanel(errorCard("Network error. Please try again.", "bi-wifi-off"));
+    } finally {
+      verifyBtn.disabled = false;
+    }
+  }
+
+  verifyBtn.addEventListener("click", verifyRecipient);
+
+  accountInput.addEventListener("input", function () {
+    if (lastVerifiedNumber !== null && accountInput.value.trim() !== lastVerifiedNumber) {
+      resetVerification();
+    }
+  });
+
+  accountInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      verifyRecipient();
+    }
+  });
+
+  document.getElementById("transferForm").addEventListener("submit", function (e) {
+    if (lastVerifiedNumber !== accountInput.value.trim()) {
+      e.preventDefault();
+      renderPanel(errorCard("Please verify the recipient account before confirming.", "bi-shield-exclamation"));
+    }
+  });
+})();
+</script>
 
 {% endblock %}

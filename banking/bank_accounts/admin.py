@@ -37,7 +37,7 @@ class AccountInline(admin.StackedInline):
     """
     model = Account
     extra = 0           # don't show blank extra forms
-    readonly_fields = ("account_number", "created_at", "updated_at")
+    readonly_fields = ("account_number", "balance", "created_at", "updated_at")
     fields = ("account_number", "balance", "created_at", "updated_at")
     can_delete = False  # accounts should not be deleted from the user edit page
 
@@ -50,7 +50,7 @@ class AccountAdmin(admin.ModelAdmin):
     list_display = ("account_number", "user_email", "balance", "created_at", "updated_at")
     list_filter  = ("created_at",)
     search_fields = ("account_number", "user__email", "user__first_name", "user__last_name")
-    readonly_fields = ("account_number", "created_at", "updated_at")
+    readonly_fields = ("account_number", "balance", "created_at", "updated_at")
     ordering = ("-created_at",)
 
     @admin.display(description="User email", ordering="user__email")

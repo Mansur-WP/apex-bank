@@ -6,6 +6,7 @@ import json
 from datetime import timedelta
 
 from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -16,6 +17,8 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, TemplateView
+
+from transfers.selectors import get_recent_transactions
 
 from .forms import LoginForm, RegistrationForm
 
@@ -61,24 +64,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             account = self.request.user.account
             context["account"] = account
 
-            sent = list(
-                account.sent_transactions
-                .select_related("receiver_account__user")
-                .order_by("-created_at")[:10]
-            )
-            received = list(
-                account.received_transactions
-                .select_related("sender_account__user")
-                .order_by("-created_at")[:10]
-            )
-            all_txns = sorted(
-                [{"txn": t, "direction": "sent",     "counterpart": t.receiver_account} for t in sent] +
-                [{"txn": t, "direction": "received",  "counterpart": t.sender_account}   for t in received],
-                key=lambda x: x["txn"].created_at,
-                reverse=True,
-            )
-            context["recent_transactions"] = all_txns[:5]
-        except Exception:
+            context["recent_transactions"] = get_recent_transactions(account, limit=5)
+        except ObjectDoesNotExist:
             context["account"] = None
             context["recent_transactions"] = []
 
@@ -94,7 +81,7 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         context["pw_form"] = PasswordChangeForm(self.request.user)
         try:
             context["account"] = self.request.user.account
-        except Exception:
+        except ObjectDoesNotExist:
             context["account"] = None
         return context
 

@@ -1,0 +1,61 @@
+{% extends "base_app.html" %}
+{% load l10n %}
+{% comment %}statement.html — Phase 5 account statement with summary, search, filters, pagination{% endcomment %}
+
+{% block title %}Account Statement — Apex Bank{% endblock %}
+{% block page_title %}Account Statement{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:1.5rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+  <div>
+    <h1 style="font-size:1.35rem;font-weight:800;color:#0F172A;margin-bottom:0.3rem;">Account Statement</h1>
+    <p style="font-size:0.875rem;color:#64748B;margin:0;">Official record of activity on your Apex account.</p>
+  </div>
+  <a href="{% url 'history' %}{% if filter_query %}?{{ filter_query }}{% endif %}" class="btn-ghost" style="text-decoration:none;padding:0.55rem 1rem;font-size:0.82rem;">
+    <i class="bi bi-clock-history me-1"></i>Transaction history
+  </a>
+</div>
+
+<!-- Account header -->
+<div class="apex-card card-pad" style="margin-bottom:1.25rem;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem;">
+    <div>
+      <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.35rem;">Account holder</div>
+      <div style="font-weight:700;color:#0F172A;">{{ request.user.get_full_name }}</div>
+      <div style="font-size:0.8rem;color:#64748B;">{{ request.user.email }}</div>
+    </div>
+    <div>
+      <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.35rem;">Account number</div>
+      <div style="font-family:'Courier New',monospace;font-weight:700;letter-spacing:0.1em;color:#0F172A;font-size:1.1rem;">{{ account.account_number }}</div>
+    </div>
+    <div>
+      <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.35rem;">Statement period</div>
+      <div style="font-size:0.875rem;font-weight:600;color:#334155;">{{ period_label }}</div>
+    </div>
+    <div>
+      <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.35rem;">Bank</div>
+      <div style="font-size:0.875rem;font-weight:600;color:#334155;">Apex Bank</div>
+    </div>
+  </div>
+</div>
+
+{% include "transfers/_statement_summary.html" with summary=summary %}
+
+{% include "transfers/_transaction_filters.html" with filters=filters form_action="statement" %}
+
+<div style="font-size:0.78rem;color:#94A3B8;margin-bottom:0.75rem;">
+  Transaction table · Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ summary.total_count }}
+</div>
+
+{% if rows %}
+  {% include "transfers/_transaction_table.html" with rows=rows %}
+  {% include "transfers/_pagination.html" with page_obj=page_obj filter_query=filter_query %}
+{% else %}
+<div class="apex-card" style="padding:3rem;text-align:center;">
+  <div style="font-weight:600;color:#334155;">No transactions in this period</div>
+  <p style="font-size:0.85rem;color:#94A3B8;margin-top:0.5rem;">Adjust your search, filters, or date range.</p>
+</div>
+{% endif %}
+
+{% endblock %}

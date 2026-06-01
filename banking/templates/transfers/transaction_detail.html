@@ -1,0 +1,75 @@
+{% extends "base_app.html" %}
+{% load l10n %}
+{% comment %}transaction_detail.html — Single transaction detail (ownership verified in view){% endcomment %}
+
+{% block title %}{{ row.txn.reference }} — Apex Bank{% endblock %}
+{% block page_title %}Transaction Details{% endblock %}
+
+{% block content %}
+
+<div style="max-width:640px;margin:0 auto;">
+
+  <a href="{% url 'history' %}" style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.82rem;font-weight:600;color:#1E40AF;text-decoration:none;margin-bottom:1.25rem;">
+    <i class="bi bi-arrow-left"></i> Back to history
+  </a>
+
+  <div class="apex-card card-pad">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;">
+      <div>
+        <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.35rem;">Reference</div>
+        <div style="font-family:'Courier New',monospace;font-size:1rem;font-weight:700;color:#0F172A;word-break:break-all;">{{ row.txn.reference }}</div>
+      </div>
+      <span class="{% if row.is_outgoing %}badge-sent{% else %}badge-success{% endif %}">
+        {{ row.transaction_type }}
+      </span>
+    </div>
+
+    <div style="text-align:center;padding:1.25rem 0 1.75rem;border-top:1px solid #F1F5F9;border-bottom:1px solid #F1F5F9;margin-bottom:1.25rem;">
+      <div style="font-size:2.5rem;font-weight:800;color:{% if row.is_outgoing %}#EF4444{% else %}#10B981{% endif %};letter-spacing:-1px;">
+        {% if row.is_outgoing %}&minus;{% else %}&plus;{% endif %}{% localize on %}₦{{ row.txn.amount|floatformat:2 }}{% endlocalize %}
+      </div>
+      <div style="font-size:0.78rem;color:#94A3B8;margin-top:0.35rem;">NGN · Completed</div>
+    </div>
+
+    <div class="modal-detail-row">
+      <span class="modal-detail-label">Transaction type</span>
+      <span class="modal-detail-value">{{ row.transaction_type }}{% if row.is_outgoing %} (Sent){% else %} (Received){% endif %}</span>
+    </div>
+    <div class="modal-detail-row">
+      <span class="modal-detail-label">Sender account</span>
+      <span class="modal-detail-value" style="font-family:'Courier New',monospace;">
+        {{ row.txn.sender_account.account_number }}
+        {% if row.is_outgoing %}<span style="font-size:0.72rem;color:#94A3B8;font-family:Inter,sans-serif;"> (you)</span>{% endif %}
+      </span>
+    </div>
+    <div class="modal-detail-row">
+      <span class="modal-detail-label">Receiver account</span>
+      <span class="modal-detail-value" style="font-family:'Courier New',monospace;">
+        {{ row.txn.receiver_account.account_number }}
+        {% if not row.is_outgoing %}<span style="font-size:0.72rem;color:#94A3B8;font-family:Inter,sans-serif;"> (you)</span>{% endif %}
+      </span>
+    </div>
+    <div class="modal-detail-row">
+      <span class="modal-detail-label">Date &amp; time</span>
+      <span class="modal-detail-value">{{ row.txn.created_at|date:"l, N j, Y" }} · {{ row.txn.created_at|time:"g:i:s A" }}</span>
+    </div>
+    {% if row.txn.note %}
+    <div class="modal-detail-row">
+      <span class="modal-detail-label">Note</span>
+      <span class="modal-detail-value">{{ row.txn.note }}</span>
+    </div>
+    {% endif %}
+    <div class="modal-detail-row">
+      <span class="modal-detail-label">Status</span>
+      <span class="modal-detail-value"><span class="badge-success">Completed</span></span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap;">
+    <a href="{% url 'history' %}" class="btn-ghost" style="flex:1;text-align:center;text-decoration:none;padding:0.65rem;">View all history</a>
+    <a href="{% url 'statement' %}" class="btn-blue" style="flex:1;text-align:center;text-decoration:none;padding:0.65rem;">Account statement</a>
+  </div>
+
+</div>
+
+{% endblock %}

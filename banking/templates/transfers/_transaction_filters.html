@@ -1,0 +1,71 @@
+{% comment %}
+  Shared search & filter form — history and statement.
+  Expects: filters (TransactionFilters), form_action (url name string)
+{% endcomment %}
+<div class="apex-card card-pad" style="margin-bottom:1.25rem;">
+  <form method="get" action="{% url form_action %}">
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.85rem;">Search</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;margin-bottom:1rem;">
+      <div>
+        <label class="form-label">Reference</label>
+        <input type="text" name="reference" class="form-control" placeholder="e.g. TXN-ABC123" value="{{ filters.reference }}" />
+      </div>
+      <div>
+        <label class="form-label">Amount (NGN)</label>
+        <input type="text" name="amount" class="form-control" placeholder="e.g. 500.00" value="{{ filters.amount }}" inputmode="decimal" />
+      </div>
+      <div>
+        <label class="form-label">Account number</label>
+        <input type="text" name="account_number" class="form-control" placeholder="10-digit number" value="{{ filters.account_number }}" maxlength="10" />
+      </div>
+    </div>
+
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94A3B8;margin-bottom:0.85rem;">Filters</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
+      <div>
+        <label class="form-label">From date</label>
+        <input type="date" name="date_from" class="form-control" value="{{ filters.date_from }}" />
+      </div>
+      <div>
+        <label class="form-label">To date</label>
+        <input type="date" name="date_to" class="form-control" value="{{ filters.date_to }}" />
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label class="form-label">Transaction type</label>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <label class="filter-pill {% if filters.direction == 'all' %}active{% endif %}" style="cursor:pointer;margin:0;">
+          <input type="radio" name="direction" value="all" {% if filters.direction == 'all' %}checked{% endif %} style="display:none;" />
+          All
+        </label>
+        <label class="filter-pill {% if filters.direction == 'sent' %}active{% endif %}" style="cursor:pointer;margin:0;">
+          <input type="radio" name="direction" value="sent" {% if filters.direction == 'sent' %}checked{% endif %} style="display:none;" />
+          <i class="bi bi-arrow-up-right"></i> Sent
+        </label>
+        <label class="filter-pill {% if filters.direction == 'received' %}active{% endif %}" style="cursor:pointer;margin:0;">
+          <input type="radio" name="direction" value="received" {% if filters.direction == 'received' %}checked{% endif %} style="display:none;" />
+          <i class="bi bi-arrow-down-left"></i> Received
+        </label>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+      <button type="submit" class="btn-blue" style="padding:0.65rem 1.25rem;">
+        <i class="bi bi-search me-1"></i>Apply
+      </button>
+      {% if filters.has_active_filters %}
+      <a href="{% url form_action %}" class="btn-ghost" style="padding:0.65rem 1rem;text-decoration:none;">Clear all</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<script>
+document.querySelectorAll('.filter-pill input[type=radio]').forEach(function (radio) {
+  radio.addEventListener('change', function () {
+    radio.closest('form').querySelectorAll('.filter-pill').forEach(function (l) { l.classList.remove('active'); });
+    radio.closest('.filter-pill').classList.add('active');
+  });
+});
+</script>

@@ -1,0 +1,23 @@
+{% comment %}Pagination — expects page_obj, filter_query (url-encoded GET params without page){% endcomment %}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav style="display:flex;align-items:center;justify-content:center;gap:0.35rem;margin-top:1.25rem;flex-wrap:wrap;" aria-label="Transaction pages">
+  {% if page_obj.has_previous %}
+  <a href="?{% if filter_query %}{{ filter_query }}&{% endif %}page={{ page_obj.previous_page_number }}"
+     class="btn-ghost" style="padding:0.45rem 0.85rem;text-decoration:none;font-size:0.82rem;">
+    <i class="bi bi-chevron-left"></i> Prev
+  </a>
+  {% endif %}
+
+  <span style="font-size:0.82rem;color:#64748B;padding:0 0.5rem;">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    <span style="color:#94A3B8;">({{ page_obj.paginator.count }} total)</span>
+  </span>
+
+  {% if page_obj.has_next %}
+  <a href="?{% if filter_query %}{{ filter_query }}&{% endif %}page={{ page_obj.next_page_number }}"
+     class="btn-ghost" style="padding:0.45rem 0.85rem;text-decoration:none;font-size:0.82rem;">
+    Next <i class="bi bi-chevron-right"></i>
+  </a>
+  {% endif %}
+</nav>
+{% endif %}
