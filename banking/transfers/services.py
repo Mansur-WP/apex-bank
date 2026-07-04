@@ -9,19 +9,14 @@ from decimal import Decimal
 from django.db import transaction
 from django.db.models import Sum
 
-
-from bank_accounts.models import Account
+from bank_accounts.models import Account, AccountStatus
 
 from .models import LedgerEntry, Transaction
 
 
 
-
 class TransferError(Exception):
     """Base class for transfer validation failures."""
-
-
-
 
 
 class ReceiverNotFoundError(TransferError):
@@ -52,37 +47,43 @@ def execute_transfer(
     """Move funds from sender to receiver inside one DB transaction.
 
     Locks both account rows in primary-key order to reduce deadlock risk.
+    The transfer engine is the single source of truth for validation:
+    ALL business-rule validation is done using locked rows.
     """
+
     if amount <= Decimal("0.00"):
         raise TransferError("Amount must be greater than zero.")
 
-    try:
-        receiver_account = Account.objects.get(
-            account_number=to_account_number
-        )
-    except Account.DoesNotExist:
-        raise ReceiverNotFoundError("No account found with that number.")
-
-    if receiver_account.pk == sender_account.pk:
-        raise SelfTransferError(
-            "You cannot transfer money to your own account."
-        )
-
-    if getattr(sender_account.user, "is_frozen", False):
-        raise TransferError("Frozen users cannot transfer money.")
-
     with transaction.atomic():
+        # Lock both accounts to serialize concurrent transfers and freeze/unfreeze updates.
+        # Validation MUST be based on locked rows (single source of truth), otherwise
+        # a freeze/unfreeze can race with this function.
         locked_accounts = (
             Account.objects.select_for_update()
-            .filter(pk__in=[sender_account.pk, receiver_account.pk])
+            .filter(pk__in=[sender_account.pk])
             .order_by("pk")
         )
 
         locked_sender = locked_accounts.get(pk=sender_account.pk)
-        locked_receiver = locked_accounts.get(pk=receiver_account.pk)
+
+        try:
+            locked_receiver = (
+                Account.objects.select_for_update()
+                .get(account_number=to_account_number)
+            )
+        except Account.DoesNotExist:
+            raise ReceiverNotFoundError("No account found with that number.")
+
+        if locked_receiver.pk == locked_sender.pk:
+            raise SelfTransferError("You cannot transfer money to your own account.")
+
+        if locked_sender.status == AccountStatus.FROZEN:
+            raise TransferError("Frozen accounts cannot send money")
+
+        # Frozen receiver accounts must still be able to receive funds.
 
         # Business rule: no overdraft (existing behavior).
-        # Ledger entries are created together with the Transaction.
+
         if locked_sender.balance < amount:
             raise InsufficientFundsError(locked_sender.balance)
 
@@ -110,10 +111,7 @@ def execute_transfer(
             amount=amount,
         )
 
-        # Accounting invariants (double-entry conservation):
-        # total debits == total credits. For a transfer we always create exactly
-        # one debit and one credit of identical amount.
-        # This assert protects future edits and gives clearer failures.
+        # Double-entry conservation check
         debit_total = (
             LedgerEntry.objects.filter(
                 transaction=txn,
@@ -129,12 +127,9 @@ def execute_transfer(
             or Decimal("0.00")
         )
 
-
-
         if debit_total != credit_total:
             raise TransferError(
-                "Double-entry validation failed: "
-                "total debits must equal total credits."
+                "Double-entry validation failed: total debits must equal total credits."
             )
 
         # Keep existing balance column in sync with ledger.
@@ -144,5 +139,3 @@ def execute_transfer(
         locked_receiver.save(update_fields=["balance", "updated_at"])
 
     return TransferResult(transaction=txn)
-
-

@@ -1,2 +1,0 @@
-- [Django CHIPS cookie fix](django-chips-cookie.md) — fixing CSRF/session cookies in cross-origin iframes requires CSRF_USE_SESSIONS + Morsel._reserved + Morsel._flags patch.
-- [Django middleware response order](django-middleware-order.md) — middleware listed FIRST in MIDDLEWARE runs LAST on responses; place cookie-stamping middleware before SessionMiddleware.

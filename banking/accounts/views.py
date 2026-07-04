@@ -138,3 +138,98 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context["chart_data"]   = json.dumps(counts)
 
         return context
+
+# ============================================
+# ADMIN USERS PAGE
+# Shows all registered users to staff/admins
+# ============================================
+class AdminUsersView(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    TemplateView
+):
+    template_name = "accounts/admin_users.html"
+    login_url = "/accounts/login/"
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get_context_data(self, **kwargs):
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+
+        context = super().get_context_data(**kwargs)
+
+        context["users"] = User.objects.all().order_by("-date_joined")
+
+        return context
+
+
+# ============================================
+# ADMIN ACCOUNTS PAGE
+# Shows all bank accounts to staff/admins
+# ============================================
+
+class AdminAccountsView(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    TemplateView
+):
+    """
+    View for displaying all bank accounts in the admin panel.
+    """
+    template_name = "accounts/admin_accounts.html"
+    login_url = "/accounts/login/"
+
+    def test_func(self):
+        """
+        Check if the user making the request is a staff member.
+        """
+        return self.request.user.is_staff
+
+    def get_context_data(self, **kwargs):
+        """
+        Get the context data for the admin accounts view.
+        """
+        from bank_accounts.models import Account
+
+        context = super().get_context_data(**kwargs)
+
+        context["accounts"] = Account.objects.all().order_by("-created_at")
+
+        return context
+
+# ============================================
+# ADMIN TRANSACTIONS PAGE
+# Shows all transactions to staff/admins
+# ============================================
+
+class AdminTransactionsView(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    TemplateView
+):
+    """
+    View for displaying all transactions in the admin panel.
+    """
+    template_name = "accounts/admin_transactions.html"
+    login_url = "/accounts/login/"
+
+    def test_func(self):
+        """
+        Check if the user making the request is a staff member.
+        """
+        return self.request.user.is_staff
+
+    def get_context_data(self, **kwargs):
+        """
+        Get the context data for the admin transactions view.
+        """
+        from transfers.models import Transaction
+
+        context = super().get_context_data(**kwargs)
+
+        context["transactions"] = Transaction.objects.all().order_by("-created_at")
+
+        return context

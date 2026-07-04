@@ -1,7 +1,7 @@
 [project]
-name = "repl-nix-workspace"
+name = "apex-bank"
 version = "0.1.0"
-description = "Add your description here"
+description = "A modern banking simulator built with Django and PostgreSQL"
 requires-python = ">=3.11"
 dependencies = [
     "dj-database-url>=3.1.2",

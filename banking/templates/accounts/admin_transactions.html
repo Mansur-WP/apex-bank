@@ -1,0 +1,71 @@
+{% extends "base_app.html" %}
+
+{% block content %}
+
+<div style="margin-bottom:1.5rem;">
+    <h1 style="
+        margin:0;
+        font-size:1.75rem;
+        font-weight:800;
+        color:#0F172A;
+    ">
+        All Transactions
+    </h1>
+
+    <p style="
+        margin-top:0.35rem;
+        color:#64748B;
+    ">
+        Monitor all transfers performed in Apex Bank.
+    </p>
+</div>
+<div class="apex-card card-pad" style="margin-bottom:1rem;">
+    <div style="
+        font-size:0.9rem;
+        color:#64748B;
+    ">
+        Total Transactions
+    </div>
+
+    <div style="
+        font-size:2rem;
+        font-weight:800;
+        color:#0F172A;
+    ">
+        {{ transactions|length }}
+    </div>
+</div>
+<div class="apex-card card-pad">    
+<table>
+    <thead style="
+    background:#F8FAFC;
+">
+        <tr>
+            <th style="padding:12px;text-align:left;">Transaction ID</th>
+            <th style="padding:12px;text-align:left;">Sender</th>
+            <th style="padding:12px;text-align:left;">Receiver</th>
+            <th style="padding:12px;text-align:left;">Amount</th>
+            <th style="padding:12px;text-align:left;">>Date</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+    {% for transaction in transactions %}
+
+        <tr>
+            <td>{{ transaction.id }}</td>
+            <td>{{ transaction.sender.get_full_name }}</td>
+            <td>{{ transaction.receiver.get_full_name }}</td>
+            <td>₦{{ transaction.amount }}</td>
+            <td>{{ transaction.created_at|date:"M d, Y H:i" }}</td>
+        </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+</div>
+
+{% endblock %}

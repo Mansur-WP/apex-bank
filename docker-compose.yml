@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: gunicorn --bind 0.0.0.0:8000 --workers 3 banking_project.wsgi:application
+    volumes:
+      - ./banking:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./banking/.env
+    environment:
+      - DATABASE_URL=postgres://apex:apex_pass@db:5432/apex_bank
+      - DJANGO_SETTINGS_MODULE=banking_project.settings
+      - DEBUG=False
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=apex
+      - POSTGRES_PASSWORD=apex_pass
+      - POSTGRES_DB=apex_bank
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apex -d apex_bank"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

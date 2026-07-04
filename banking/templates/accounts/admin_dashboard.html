@@ -16,9 +16,14 @@
   </div>
 </div>
 
+<a href="/transfers/ledger-audit/" class="btn btn-primary" width="100%" style="margin-bottom:1.75rem;display:inline-flex;align-items:center;gap:0.5rem;">
+    View Ledger Audit
+</a>
 <!-- Stat cards -->
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem;margin-bottom:1.75rem;">
 
+<a href="{% url 'admin_users' %}"
+   style="text-decoration:none;color:inherit;display:block;">
   <div class="apex-card card-pad">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
       <span class="stat-label">Total Users</span>
@@ -29,7 +34,10 @@
     <div style="font-size:2rem;font-weight:800;color:#0F172A;letter-spacing:-0.5px;">{{ total_users }}</div>
     <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.15rem;">Registered accounts</div>
   </div>
+</a>
 
+<a href="{% url 'admin_accounts' %}"
+   style="text-decoration:none;color:inherit;display:block;">
   <div class="apex-card card-pad">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
       <span class="stat-label">Total Accounts</span>
@@ -40,7 +48,10 @@
     <div style="font-size:2rem;font-weight:800;color:#0F172A;letter-spacing:-0.5px;">{{ total_accounts }}</div>
     <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.15rem;">Bank accounts opened</div>
   </div>
+</a>
 
+<a href="{% url 'admin_transactions' %}"
+   style="text-decoration:none;color:inherit;display:block;">
   <div class="apex-card card-pad">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
       <span class="stat-label">Total Transactions</span>
@@ -51,6 +62,7 @@
     <div style="font-size:2rem;font-weight:800;color:#0F172A;letter-spacing:-0.5px;">{{ total_transactions }}</div>
     <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.15rem;">All-time transfers</div>
   </div>
+</a>
 
   <div class="apex-card card-pad balance-card" style="position:relative;overflow:hidden;">
     <div style="position:absolute;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.05);top:-20px;right:-20px;"></div>
@@ -68,43 +80,40 @@
 
 </div>
 
+
+
 <!-- Freeze / Unfreeze actions -->
 <div class="apex-card card-pad" style="margin-bottom:1.75rem;">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:1rem;flex-wrap:wrap;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
     <div>
-      <div style="font-size:1rem;font-weight:800;color:#0F172A;">Account Freezing</div>
-      <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.15rem;">
-        Freeze blocks transfers but does not disable login or read access.
-      </div>
+      <div style="font-size:0.95rem;font-weight:700;color:#0F172A;">Freeze / Unfreeze Accounts</div>
+      <div style="font-size:0.75rem;color:#94A3B8;margin-top:0.1rem;">Enter an account number to change its status.</div>
+    </div>
+    <div style="display:flex;gap:0.75rem;align-items:center;">
+      <span style="font-size:0.72rem;color:#94A3B8;">Tip: 10 digits</span>
     </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-    <form method="post" action="{% url 'freeze_account' %}">
+  <div style="display:grid;grid-template-columns:1fr;gap:0.75rem;">
+    <form method="post" action="{% url 'freeze_account' %}" style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
       {% csrf_token %}
-      <div>
-        <label class="form-label">Account number to freeze</label>
-        <input class="form-control" name="account_number" inputmode="numeric" maxlength="10" placeholder="10-digit account number" />
-      </div>
-      <button class="btn-blue" type="submit" style="margin-top:0.9rem;width:100%;">
-        <i class="bi bi-lock-fill"></i> Freeze Account
-      </button>
+      <input name="account_number" maxlength="10" minlength="10" inputmode="numeric" autocomplete="off" required
+             class="form-control" placeholder="Account number" style="max-width:260px;" />
+      <button type="submit" class="btn btn-danger">Freeze</button>
     </form>
 
-    <form method="post" action="{% url 'unfreeze_account' %}">
+
+    <form method="post" action="{% url 'unfreeze_account' %}" style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
       {% csrf_token %}
-      <div>
-        <label class="form-label">Account number to unfreeze</label>
-        <input class="form-control" name="account_number" inputmode="numeric" maxlength="10" placeholder="10-digit account number" />
-      </div>
-      <button class="btn-ghost" type="submit" style="margin-top:0.9rem;width:100%;border-color:#10B981;color:#10B981;">
-        <i class="bi bi-unlock-fill"></i> Unfreeze Account
-      </button>
+      <input name="account_number" maxlength="10" minlength="10" inputmode="numeric" autocomplete="off" required
+             class="form-control" placeholder="Account number" style="max-width:260px;" />
+      <button type="submit" class="btn btn-success">Unfreeze</button>
     </form>
   </div>
 </div>
 
 <!-- Chart -->
+
 <div class="apex-card card-pad" style="margin-bottom:1.75rem;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
     <div>
